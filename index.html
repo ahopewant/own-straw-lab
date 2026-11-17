@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ØWN Straw Fitting Lab — 3D Hollow Straw Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F2EF; --panel:#FBFBF9; --line:#E3E4DF; --line2:#D3D5CF; --ink:#20292C; --mute:#6E7673; --soft:#EEF0EC;
+  --mint:#97CFC0; --mint2:#3E9C83; --mag:#DD227E;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.45 "IBM Plex Sans KR",system-ui,sans-serif}
+.app{display:grid;grid-template-columns:360px 1fr;height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;overscroll-behavior:contain}
+.brand{display:flex;gap:14px;align-items:center;padding:16px 18px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:3}
+.brand .lg svg{height:26px;width:auto;display:block}
+.brand b{display:block;font-weight:600;font-size:13px}
+.brand span{display:block;font:500 10px "IBM Plex Mono",monospace;letter-spacing:.14em;color:var(--mute);margin-top:2px}
+details.sec{border-bottom:1px solid var(--line)}
+details.sec>summary{list-style:none;cursor:pointer;padding:13px 18px;display:flex;align-items:baseline;gap:8px;user-select:none}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary b{font:500 11px "IBM Plex Mono",monospace;letter-spacing:.14em}
+details.sec>summary em{font-style:normal;color:var(--mute);font-size:12px}
+details.sec>summary::after{content:"+";margin-left:auto;color:var(--mute);font:400 15px "IBM Plex Mono",monospace}
+details.sec[open]>summary::after{content:"−"}
+.body{padding:0 18px 16px}
+.row{margin-top:10px}
+.row label{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;gap:8px}
+.row label span.l{font-size:12.5px}
+.row label small{color:var(--mute);font-size:11px}
+.nv{display:inline-flex;align-items:center;gap:3px;flex:none}
+.nv i{font:500 11px "IBM Plex Mono",monospace;font-style:normal;color:var(--mute);min-width:10px}
+input.num{width:66px;font:500 11.5px "IBM Plex Mono",monospace;color:var(--ink);background:var(--soft);border:1px solid transparent;border-radius:5px;padding:3px 5px;text-align:right;-moz-appearance:textfield}
+input.num:focus{outline:none;border-color:var(--mint);background:#fff}
+input.num::-webkit-inner-spin-button,input.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=range]{width:100%;accent-color:var(--mint);height:18px;margin:0}
+select,input[type=text]{width:100%;background:#fff;color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:7px 9px;font:inherit;font-size:12.5px}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+button,.filebtn{appearance:none;border:1px solid var(--line2);background:#fff;color:var(--ink);font:inherit;font-size:12.5px;padding:7px 11px;border-radius:7px;cursor:pointer;transition:background .12s,border-color .12s}
+button:hover,.filebtn:hover{border-color:var(--ink)}
+button.on{background:var(--mint);color:var(--ink);border-color:var(--mint)}
+button.pri,.filebtn.pri{background:var(--mint);color:var(--ink);border-color:var(--mint);font-weight:500}
+button.pri:hover,.filebtn.pri:hover{border-color:var(--ink)}
+button.acc{background:var(--mint);border-color:var(--mint);color:var(--ink)}
+button.grow,.filebtn.grow{flex:1;text-align:center}
+.filebtn input{display:none}
+.mono{font:500 11px "IBM Plex Mono",monospace;letter-spacing:.08em}
+.check{display:flex;align-items:center;gap:8px;margin-top:11px;cursor:pointer;font-size:12.5px}
+.check input{accent-color:var(--mint);width:15px;height:15px;margin:0}
+.note{font-size:11.5px;color:var(--mute);margin:8px 0 0;line-height:1.5}
+.sub{margin-top:16px;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.14em;color:var(--mute)}
+.swatches{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin-top:8px}
+.sw{position:relative;aspect-ratio:1;border-radius:50%;border:1px solid rgba(0,0,0,.12);padding:0;cursor:pointer}
+.sw.sel{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--ink)}
+.sw i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 10px "IBM Plex Mono",monospace;font-style:normal}
+.palrow{display:flex;gap:6px;margin-top:8px;align-items:center}
+.palrow input[type=color]{width:34px;height:30px;border:1px solid var(--line2);border-radius:7px;padding:2px;background:#fff;cursor:pointer;flex:none}
+.ring{border:1px solid var(--line);border-radius:10px;padding:8px 10px 10px;margin-top:10px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.ring.hov{border-color:var(--mint);box-shadow:0 0 0 2px var(--mint)}
+.ring .hd{display:flex;align-items:center;gap:6px}
+.ring .hd b{font:500 11.5px "IBM Plex Mono",monospace;letter-spacing:.06em}
+.ring .hd .st{margin-left:auto;font:500 10.5px "IBM Plex Mono",monospace;color:var(--mute)}
+.ring .hd .ok{color:var(--mint2)}
+.ring .hd .tag{font:500 9.5px "IBM Plex Mono",monospace;background:var(--mint);color:var(--ink);padding:1px 5px;border-radius:4px;letter-spacing:.06em}
+.ring .hd button{padding:2px 7px;font-size:11px;line-height:1.4}
+.ring .row{margin-top:6px}
+.ring .row label span.l{font-size:12px;color:var(--mute)}
+
+main#view{position:relative;overflow:hidden;min-height:0;background:#fff}
+#view canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;left:20px;top:18px;pointer-events:none;font:500 11px "IBM Plex Mono",monospace;letter-spacing:.06em;color:var(--ink);width:270px}
+.hud .t{display:flex;justify-content:space-between;letter-spacing:.16em;margin-bottom:8px}
+.hud .bar{height:3px;background:rgba(32,41,44,.12);position:relative;margin-bottom:10px}
+.hud .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--mint);transition:width .1s}
+.hud .rr{display:grid;grid-template-columns:52px 1fr 64px;gap:8px;align-items:center;padding:2px 0;opacity:.85}
+.hud .rr.hov{opacity:1;background:rgba(151,207,192,.32);box-shadow:-4px 0 0 rgba(151,207,192,.32),4px 0 0 rgba(151,207,192,.32)}
+.hud .rr .g{height:7px;position:relative;border-left:1px solid currentColor;border-right:1px solid currentColor;opacity:.8}
+.hud .rr .g::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px dashed currentColor;opacity:.5}
+.hud .rr .g b{position:absolute;top:-1px;width:3px;height:9px;background:var(--mint);transform:translateX(-1.5px)}
+.hud .rr span:last-child{text-align:right}
+.hud .ok{color:var(--mint2)}
+.dark .hud,.dark .label,.dark .hint{color:#F2F2EE}
+.dark .hud .bar{background:rgba(255,255,255,.18)}
+.dark .hud .ok{color:var(--mint)}
+.label{position:absolute;left:22px;bottom:18px;pointer-events:none;color:var(--ink)}
+.label .lg svg{height:30px;width:auto;display:block}
+.label span{display:block;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.2em;margin-top:8px}
+.hint{position:absolute;right:20px;bottom:72px;color:var(--mute);font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.04em;pointer-events:none;text-align:right;line-height:1.7}
+.viewbar{position:absolute;right:16px;top:14px;display:flex;gap:4px;background:rgba(255,255,255,.9);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px;padding:4px}
+.viewbar button{border:0;background:transparent;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.1em;padding:7px 9px}
+.viewbar button:hover{background:var(--soft)}
+.viewbar .sep{width:1px;background:var(--line);margin:3px 2px}
+.playbar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:5px;align-items:center}
+.playbar button{font:500 11px "IBM Plex Mono",monospace;letter-spacing:.1em;border-radius:8px;white-space:nowrap}
+.playbar label{display:flex;align-items:center;gap:5px;font:500 10.5px "IBM Plex Mono",monospace;padding:0 6px;cursor:pointer;white-space:nowrap}
+.playbar input{accent-color:var(--mint);margin:0}
+.toast{position:absolute;left:50%;top:16px;opacity:0;pointer-events:none;transform:translate(-50%,-20px);transition:transform .25s,opacity .25s;background:var(--ink);color:#fff;padding:9px 14px;border-radius:9px;font-size:12.5px;z-index:9;max-width:80%}
+.toast.on{transform:translate(-50%,0);opacity:1}
+.modal{position:fixed;inset:0;background:rgba(20,24,22,.6);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:14px;padding:16px;max-width:min(920px,96vw);max-height:92vh;overflow:auto;text-align:center}
+.modal img{max-width:100%;max-height:68vh;display:block;margin:0 auto 10px;border-radius:8px;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/16px 16px}
+.modal textarea{width:min(640px,86vw);height:300px;font:11px "IBM Plex Mono",monospace;border:1px solid var(--line2);border-radius:8px;padding:8px}
+.modal p{color:var(--mute);font-size:12.5px;margin:0 0 10px}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto}
+  main#view{order:-1;height:62vh}
+  aside{border-right:0;border-top:1px solid var(--line);overflow:visible}
+  .brand{position:static}
+  .hud{transform:scale(.8);transform-origin:0 0}
+  .hint{display:none}
+}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "fflate":"https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+}}
+</script>
+</head>
+<body>
+<div class="app">
+<aside id="panel">
+  <header class="brand">
+    <div class="lg" data-logo></div>
+    <div><b>Straw Fitting Graphic Lab</b><span>ALIGN TO FIT · MADE TO FIT YOUR SIP.</span></div>
+  </header>
+
+  <details class="sec" open>
+    <summary><b>ALIGN TO FIT</b><em>정렬 · 분해</em></summary>
+    <div class="body">
+      <div id="secAlign"></div>
+      <div class="row"><label><span class="l">분해 순서 (위 → 아래)</span></label>
+        <select id="order">
+          <option value="small">작은 링이 위로</option><option value="large">큰 링이 위로</option>
+          <option value="zigzag">교차 배치</option><option value="custom">사용자 지정 (링별 ▲▼)</option>
+        </select></div>
+      <div id="secAlign2"></div>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary><b>RING FITTING</b><em>링별 피팅</em></summary>
+    <div class="body">
+      <p class="note" style="margin-top:0">그래픽 화면에서 링에 마우스를 올리면 선택돼요. 드래그하면 회전, Shift+드래그하면 높이가 바뀌어요. 기준선 가까이 놓으면 자석처럼 딱 맞춰져요.</p>
+      <div class="btns" style="margin-top:10px"><button id="addOuter" class="pri grow">+ 바깥 링 추가</button><button id="addInner" class="grow">+ 안쪽 링 추가</button></div>
+      <div id="ringRows"></div>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary><b>STRAW PARAMETERS</b><em>빨대 형태</em></summary>
+    <div class="body">
+      <div id="secStraw"></div>
+      <div class="row"><label><span class="l">휘어지는 방향</span></label>
+        <select id="curveDir"><option value="arch">위로 아치</option><option value="side">옆으로 휨</option><option value="random">랜덤 조합</option></select></div>
+      <label class="check"><input type="checkbox" id="linkW">원본 선 굵기 → 외경에 반영</label>
+      <div id="secStraw2"></div>
+      <label class="check"><input type="checkbox" id="half">반단면 (Half-cut) — 속이 빈 구조 확인</label>
+    </div>
+  </details>
+
+  <details class="sec">
+    <summary><b>RADIAL PARAMETERS</b><em>방사형 배치</em></summary>
+    <div class="body">
+      <div id="secRadial"></div>
+      <div class="row btns"><button id="reseed" class="grow">↻ 변주 다시 섞기 (Seed)</button></div>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary><b>VISUAL PARAMETERS</b><em>색 · 재질 · 배경</em></summary>
+    <div class="body">
+      <div class="sub" style="margin-top:4px">COLOR PALETTE · 선택 순서대로 적용</div>
+      <div class="swatches" id="swatches"></div>
+      <div class="btns" id="palPresets" style="margin-top:8px"></div>
+      <div class="palrow"><input type="color" id="customColor" value="#B9A6E3"><button id="addColor">+ 컬러 추가</button><button id="clearPal">비우기</button></div>
+      <div class="row"><label><span class="l">컬러 적용 방식</span></label>
+        <select id="colorMode">
+          <option value="ring">링(직경)별</option><option value="weight">눈금 굵기별 (굵은/가는)</option>
+          <option value="gradient">방사 그라데이션</option><option value="random">랜덤 조합</option><option value="mono">단색</option>
+        </select></div>
+      <div class="palrow"><label class="check" style="margin:0;flex:1"><input type="checkbox" id="accent">굵은 눈금 강조색</label><input type="color" id="accentColor"></div>
+
+      <div class="sub">MATERIAL</div>
+      <div class="btns" id="matBtns" style="margin-top:8px"></div>
+      <div class="row"><label><span class="l">재질 적용 방식</span></label>
+        <select id="matMode"><option value="all">전체 동일</option><option value="ring">링별로 다른 재질</option><option value="random">랜덤 재질 조합</option></select></div>
+
+      <div class="sub">BACKGROUND</div>
+      <div class="btns" style="margin-top:8px"><button data-bg="white" class="grow">White</button><button data-bg="charcoal" class="grow">Charcoal</button><button data-bg="black" class="grow">Black</button></div>
+      <label class="check"><input type="checkbox" id="shadow">바닥 그림자</label>
+    </div>
+  </details>
+
+  <details class="sec">
+    <summary><b>CAMERA · LIGHT</b><em>시점 · 조명</em></summary>
+    <div class="body">
+      <div class="btns"><button data-view="top">TOP</button><button data-view="iso">ISO</button><button data-view="low">LOW</button><button data-view="side">SIDE</button><button data-view="end" class="acc">단면 확대</button></div>
+      <div id="secCam"></div>
+      <label class="check"><input type="checkbox" id="autoRotate">자동 회전</label>
+      <div id="secLight"></div>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary><b>EXPORT · SAVE</b><em>저장</em></summary>
+    <div class="body">
+      <div class="row"><label><span class="l">이미지 해상도</span></label>
+        <select id="res"><option value="1">1× (화면 크기)</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></div>
+      <label class="check"><input type="checkbox" id="label">ØWN 로고 라벨 포함</label>
+      <div class="btns" style="margin-top:10px">
+        <button id="exPng" class="pri grow">PNG 저장</button><button id="exPngT" class="grow">투명 배경 PNG</button>
+      </div>
+      <div class="btns" style="margin-top:6px"><button id="exPsd" class="grow">포토샵 PSD · 레이어 (.zip)</button><button id="exSvg" class="grow">일러스트 벡터 SVG</button></div>
+      <p class="note"><b>PSD</b>: 배경 · 그림자 · 링별 빨대 · 로고가 각각 레이어로 들어가요 (저장 규칙상 .zip으로 묶여요).<br><b>SVG</b>: 지금 화면 그대로 빨대 하나하나가 패스로 된 벡터 파일이에요. 일러스트레이터에서 열면 링별 그룹으로 나뉘고, 빨대 끝의 원형 단면도 도넛 모양 패스로 들어가요. 조명 음영과 그림자는 단색으로 단순화돼요.</p>
+      <div class="sub">PARAMETER SETTINGS</div>
+      <div class="btns" style="margin-top:8px">
+        <button id="saveJson" class="grow">설정 파일 저장 (.json)</button>
+        <label class="filebtn grow">설정 불러오기<input type="file" id="jsonIn" accept=".json,application/json"></label>
+      </div>
+      <div class="palrow"><input type="text" id="presetName" placeholder="프리셋 이름 (예: FIT MINT 정렬)"><button id="presetSave">저장</button></div>
+      <div class="palrow"><select id="presetList"></select><button id="presetLoad">불러오기</button><button id="presetDel">삭제</button></div>
+      <p class="note">프리셋은 이 브라우저에만 저장돼요. 다른 기기에서 쓰려면 설정 파일(.json)로 저장하세요.</p>
+    </div>
+  </details>
+</aside>
+
+<main id="view">
+  <div class="hud" id="hud"></div>
+  <div class="viewbar">
+    <button data-view="top">TOP</button><button data-view="iso">ISO</button><button data-view="low">LOW</button><button data-view="side">SIDE</button>
+    <span class="sep"></span><button data-view="end">단면 확대</button>
+  </div>
+  <div class="label" id="brandLabel"><div class="lg" data-logo></div><span>MADE TO FIT YOUR SIP.</span></div>
+  <div class="playbar">
+    <button id="playAlign" class="pri">▶ ALIGN TO FIT</button>
+    <button id="playExplode">▶ 분해 DISASSEMBLE</button>
+    <label><input type="checkbox" id="loopChk">반복</label>
+    <label title="켜면 링 위에서 드래그할 때 그 링만 회전해요"><input type="checkbox" id="grab">링 잡기</label>
+  </div>
+  <div class="hint">링 위에 마우스 → 선택 · 드래그 회전 · Shift+드래그 높이<br>빈 곳 · Alt+드래그 시점 회전 · 휠 확대 · 우클릭 이동</div>
+  <div class="toast" id="toast"></div>
+</main>
+</div>
+
+<div class="modal" id="modal"><div class="box"><div id="modalBody"></div><button id="modalClose">닫기</button></div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { zipSync } from 'fflate';
+
+
+
+/* ================= math utils ================= */
+const DEG = Math.PI / 180;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const wrapPI = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
+const wrap180 = d => { d = (d + 180) % 360; if (d < 0) d += 360; return d - 180; };
+const lerp2 = (A, B, t) => [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t];
+const d2 = (A, B) => Math.hypot(B[0] - A[0], B[1] - A[1]);
+const polyLen = p => { let L = 0; for (let i = 1; i < p.length; i++) L += d2(p[i - 1], p[i]); return L; };
+function hash(i, c, seed) {
+  let h = (Math.imul(i + 1, 374761393) + Math.imul(c + 7, 668265263) + Math.imul(seed + 13, 1274126177)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16;
+  h = Math.imul(h ^ (h >>> 15), 2246822519); h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+/* ================= SVG parsing ================= */
+const I = [1, 0, 0, 1, 0, 0];
+function mul(A, B) {
+  return [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3],
+    A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
+}
+const apply = (m, p) => [m[0] * p[0] + m[2] * p[1] + m[4], m[1] * p[0] + m[3] * p[1] + m[5]];
+function parseTransform(str) {
+  let m = I;
+  if (!str) return m;
+  const re = /(matrix|translate|scale|rotate|skewX|skewY)\s*\(([^)]*)\)/g; let r;
+  while ((r = re.exec(str))) {
+    const v = r[2].trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    let t = I;
+    switch (r[1]) {
+      case 'matrix': if (v.length === 6) t = v; break;
+      case 'translate': t = [1, 0, 0, 1, v[0] || 0, v[1] || 0]; break;
+      case 'scale': t = [v[0], 0, 0, v.length > 1 ? v[1] : v[0], 0, 0]; break;
+      case 'rotate': {
+        const a = v[0] * DEG, c = Math.cos(a), s = Math.sin(a); t = [c, s, -s, c, 0, 0];
+        if (v.length > 2) t = mul(mul([1, 0, 0, 1, v[1], v[2]], t), [1, 0, 0, 1, -v[1], -v[2]]);
+        break;
+      }
+      case 'skewX': t = [1, 0, Math.tan(v[0] * DEG), 1, 0, 0]; break;
+      case 'skewY': t = [1, Math.tan(v[0] * DEG), 0, 1, 0, 0]; break;
+    }
+    m = mul(m, t);
+  }
+  return m;
+}
+function parseDecl(s) {
+  const o = {};
+  (s || '').split(';').forEach(p => { const i = p.indexOf(':'); if (i > 0) o[p.slice(0, i).trim().toLowerCase()] = p.slice(i + 1).trim(); });
+  return o;
+}
+function parseCSS(doc) {
+  const rules = {};
+  doc.querySelectorAll('style').forEach(st => {
+    const txt = st.textContent.replace(/\/\*[\s\S]*?\*\//g, '');
+    const re = /([^{}]+)\{([^}]*)\}/g; let r;
+    while ((r = re.exec(txt))) {
+      const decl = parseDecl(r[2]);
+      r[1].split(',').forEach(sel => {
+        sel = sel.trim();
+        if (sel.startsWith('.')) { const c = sel.slice(1); rules[c] = Object.assign(rules[c] || {}, decl); }
+      });
+    }
+  });
+  return rules;
+}
+function styleOf(el, prop, css) {
+  for (let e = el; e && e.nodeType === 1; e = e.parentNode) {
+    const st = e.getAttribute('style');
+    if (st) { const d = parseDecl(st); if (d[prop] != null) return d[prop]; }
+    const a = e.getAttribute(prop); if (a != null) return a;
+    const cls = e.getAttribute('class');
+    if (cls) for (const c of cls.split(/\s+/)) if (css[c] && css[c][prop] != null) return css[c][prop];
+  }
+  return null;
+}
+const tagOf = e => (e.localName || e.tagName || '').toLowerCase();
+function chainTransform(el, stop) {
+  const chain = [];
+  for (let e = el; e && e.nodeType === 1 && e !== stop && tagOf(e) !== 'svg'; e = e.parentNode) chain.unshift(e);
+  let m = I;
+  for (const e of chain) m = mul(m, parseTransform(e.getAttribute('transform')));
+  return m;
+}
+function shapePoints(el) {
+  const t = tagOf(el);
+  const n = k => parseFloat(el.getAttribute(k)) || 0;
+  if (t === 'line') return [{ pts: [[n('x1'), n('y1')], [n('x2'), n('y2')]], closed: false }];
+  if (t === 'polyline' || t === 'polygon') {
+    const v = (el.getAttribute('points') || '').trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    const pts = []; for (let i = 0; i + 1 < v.length; i += 2) pts.push([v[i], v[i + 1]]);
+    return [{ pts, closed: t === 'polygon' }];
+  }
+  if (t === 'circle' || t === 'ellipse') {
+    const cx = n('cx'), cy = n('cy');
+    const rx = t === 'circle' ? n('r') : n('rx'), ry = t === 'circle' ? n('r') : n('ry');
+    const pts = []; const N = 180;
+    for (let i = 0; i < N; i++) { const a = i / N * 2 * Math.PI; pts.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); }
+    return [{ pts, closed: true }];
+  }
+  if (t === 'rect') {
+    const x = n('x'), y = n('y'), w = n('width'), h = n('height');
+    return [{ pts: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]], closed: true }];
+  }
+  if (t === 'path') {
+    const d = el.getAttribute('d'); if (!d) return [];
+    const data = new SVGLoader().parse(`<svg xmlns="http://www.w3.org/2000/svg"><path d="${d.replace(/"/g, '')}"/></svg>`);
+    const out = [];
+    for (const p of data.paths) for (const sp of p.subPaths) {
+      const pts = sp.getPoints(24).map(v => [v.x, v.y]);
+      const dd = [];
+      for (const q of pts) if (!dd.length || d2(dd[dd.length - 1], q) > 1e-7) dd.push(q);
+      if (dd.length < 2) continue;
+      let closed = !!sp.autoClose;
+      if (dd.length > 2 && d2(dd[0], dd[dd.length - 1]) < 1e-6) { dd.pop(); closed = true; }
+      out.push({ pts: dd, closed });
+    }
+    return out;
+  }
+  return [];
+}
+const isLeft = (a, b, p) => (b[0] - a[0]) * (p[1] - a[1]) - (p[0] - a[0]) * (b[1] - a[1]);
+function insideClip(p, clip) {
+  let wn = 0, cross = 0;
+  for (const ring of clip.rings) {
+    const n = ring.length;
+    for (let i = 0; i < n; i++) {
+      const a = ring[i], b = ring[(i + 1) % n];
+      if (a[1] <= p[1]) { if (b[1] > p[1] && isLeft(a, b, p) > 0) wn++; }
+      else if (b[1] <= p[1] && isLeft(a, b, p) < 0) wn--;
+      if ((a[1] > p[1]) !== (b[1] > p[1])) {
+        const x = a[0] + (p[1] - a[1]) / (b[1] - a[1]) * (b[0] - a[0]);
+        if (x > p[0]) cross++;
+      }
+    }
+  }
+  return clip.rule === 'evenodd' ? (cross % 2 === 1) : wn !== 0;
+}
+function segInt(A, B, C, D) {
+  const r = [B[0] - A[0], B[1] - A[1]], s = [D[0] - C[0], D[1] - C[1]];
+  const den = r[0] * s[1] - r[1] * s[0];
+  if (Math.abs(den) < 1e-12) return null;
+  const q = [C[0] - A[0], C[1] - A[1]];
+  const t = (q[0] * s[1] - q[1] * s[0]) / den, u = (q[0] * r[1] - q[1] * r[0]) / den;
+  return (t > 1e-9 && t < 1 - 1e-9 && u >= -1e-9 && u <= 1 + 1e-9) ? t : null;
+}
+function clipPolyline(pts, clip) {
+  const pieces = []; let cur = null;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const A = pts[i], B = pts[i + 1]; const ts = [0, 1];
+    for (const ring of clip.rings) for (let j = 0; j < ring.length; j++) {
+      const t = segInt(A, B, ring[j], ring[(j + 1) % ring.length]); if (t !== null) ts.push(t);
+    }
+    ts.sort((a, b) => a - b);
+    for (let k = 0; k < ts.length - 1; k++) {
+      const t0 = ts[k], t1 = ts[k + 1]; if (t1 - t0 < 1e-9) continue;
+      if (insideClip(lerp2(A, B, (t0 + t1) / 2), clip)) {
+        const p0 = lerp2(A, B, t0), p1 = lerp2(A, B, t1);
+        if (cur && d2(cur[cur.length - 1], p0) < 1e-6) cur.push(p1); else { cur = [p0, p1]; pieces.push(cur); }
+      } else cur = null;
+    }
+  }
+  return pieces.filter(p => polyLen(p) > 1e-6);
+}
+function clipsFor(doc, el, css) {
+  const out = [];
+  for (let e = el; e && e.nodeType === 1; e = e.parentNode) {
+    let cp = e.getAttribute('clip-path');
+    if (!cp) { const st = e.getAttribute('style'); if (st) cp = parseDecl(st)['clip-path']; }
+    if (!cp) continue;
+    const m = /url\(\s*['"]?#([^'")\s]+)['"]?\s*\)/.exec(cp); if (!m) continue;
+    const clip = doc.getElementById(m[1]); if (!clip) continue;
+    const ct = mul(chainTransform(e), parseTransform(clip.getAttribute('transform')));
+    const rings = []; let rule = 'nonzero';
+    const addShape = (ch, extra) => {
+      const m2 = mul(mul(ct, extra), chainTransform(ch, clip));
+      if (styleOf(ch, 'clip-rule', css) === 'evenodd') rule = 'evenodd';
+      for (const s of shapePoints(ch)) rings.push(s.pts.map(p => apply(m2, p)));
+    };
+    for (const ch of clip.querySelectorAll('*')) {
+      const t = tagOf(ch);
+      if (['path', 'circle', 'ellipse', 'rect', 'polygon'].includes(t)) addShape(ch, I);
+      else if (t === 'use') {
+        const href = ch.getAttribute('href') || ch.getAttribute('xlink:href');
+        const ref = href && doc.getElementById(href.replace('#', ''));
+        if (ref) addShape(ref, [1, 0, 0, 1, parseFloat(ch.getAttribute('x')) || 0, parseFloat(ch.getAttribute('y')) || 0]);
+      }
+    }
+    if (rings.length) out.push({ rings, rule, id: m[1] });
+  }
+  return out;
+}
+let _cc = null;
+function normColor(c) {
+  if (!c || /^url/i.test(c)) return '#231f20';
+  if (typeof document !== 'undefined' && document.createElement) {
+    try {
+      _cc = _cc || document.createElement('canvas').getContext('2d');
+      if (_cc) { _cc.fillStyle = '#231f20'; _cc.fillStyle = c; return _cc.fillStyle; }
+    } catch (e) { /* ignore */ }
+  }
+  return c.startsWith('#') ? c : '#231f20';
+}
+function mmPerUserUnit(svg) {
+  const vb = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+  const w = svg.getAttribute('width') || '';
+  const m = /^([\d.]+)\s*(mm|cm|in|pt|px)?$/.exec(w.trim());
+  const per = { mm: 1, cm: 10, in: 25.4, pt: 25.4 / 72, px: 25.4 / 96 };
+  if (m && vb.length === 4 && vb[2] > 0) return parseFloat(m[1]) * per[m[2] || 'px'] / vb[2];
+  return 25.4 / 96;
+}
+function parseSVGSource(text, tag) {
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  if (doc.querySelector('parsererror') || !doc.documentElement || tagOf(doc.documentElement) !== 'svg') throw new Error('SVG 형식을 읽지 못했어요');
+  const css = parseCSS(doc);
+  const items = [], clipCenters = [];
+  const SKIP = new Set(['defs', 'clippath', 'mask', 'symbol', 'marker', 'pattern']);
+  for (const el of doc.documentElement.querySelectorAll('line,polyline,polygon,path,circle,ellipse,rect')) {
+    let skip = false;
+    for (let e = el.parentNode; e && e.nodeType === 1; e = e.parentNode) if (SKIP.has(tagOf(e))) { skip = true; break; }
+    if (skip) continue;
+    const stroke = styleOf(el, 'stroke', css);
+    if (!stroke || stroke === 'none' || stroke === 'transparent') continue;
+    if (styleOf(el, 'display', css) === 'none') continue;
+    const m = chainTransform(el);
+    const sc = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1;
+    const sw = (parseFloat(styleOf(el, 'stroke-width', css) ?? '1') || 1) * sc;
+    const clips = clipsFor(doc, el, css);
+    for (const c of clips) for (const ring of c.rings) {
+      let x = 0, y = 0; ring.forEach(p => { x += p[0]; y += p[1]; }); clipCenters.push([x / ring.length, y / ring.length]);
+    }
+    const groupId = tag + ':' + (clips.map(c => c.id).join('+') || '_');
+    for (const s of shapePoints(el)) {
+      let pts = s.pts.map(p => apply(m, p));
+      if (s.closed) pts = [...pts, pts[0]];
+      let pieces = [pts];
+      for (const c of clips) pieces = pieces.flatMap(p => clipPolyline(p, c));
+      const closed = s.closed && clips.length === 0;
+      for (const p of pieces) {
+        if (closed) p.pop();
+        items.push({ pts: p, w: sw, color: normColor(stroke), group: groupId, closed });
+      }
+    }
+  }
+  let center = null;
+  if (clipCenters.length) {
+    const c = clipCenters.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]).map(v => v / clipCenters.length);
+    const spread = Math.max(...clipCenters.map(p => Math.hypot(p[0] - c[0], p[1] - c[1])));
+    if (spread < 1) center = c;
+  }
+  return { items, mmPerUnit: mmPerUserUnit(doc.documentElement), center };
+}
+
+/* ================= procedural tape-measure pattern ================= */
+const OWN_BOUNDS = [0.1444, 0.2329, 0.3842, 0.6109, 1];
+function genItems(p) {
+  const n = p.ringCount;
+  const b = n === 4 ? OWN_BOUNDS : Array.from({ length: n + 1 }, (_, i) => 0.1444 * Math.pow(1 / 0.1444, i / n));
+  const items = []; const N = Math.round(p.density), M = Math.max(1, Math.round(p.majorEvery));
+  for (let k = 0; k < n; k++) {
+    const rin = b[k] * 10, rout = b[k + 1] * 10;
+    for (let j = 0; j < N; j++) {
+      const th = j / N * 2 * Math.PI - Math.PI / 2;
+      const major = j % M === 0, mid = !major && M % 2 === 0 && j % (M / 2) === 0;
+      const f = major ? 1 : 1 - p.rhythm * (mid ? 0.3 : 0.6);
+      const r0 = rout - (rout - rin) * f;
+      const c = Math.cos(th), s = Math.sin(th);
+      items.push({ pts: [[r0 * c, r0 * s], [rout * c, rout * s]], w: major ? 7 : 1.5, color: '#231f20', group: 'g' + k, closed: false });
+    }
+  }
+  return { items, mmPerUnit: 15.4 };
+}
+
+/* ================= normalisation / rings ================= */
+function estimateCenter(items) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  items.forEach(it => it.pts.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }));
+  const bb = [(minX + maxX) / 2, (minY + maxY) / 2], size = Math.max(maxX - minX, maxY - minY) || 1;
+  let a = 0, b = 0, c = 0, rx = 0, ry = 0, cnt = 0;
+  const lines = [];
+  for (const it of items) {
+    if (it.closed) continue;
+    const A = it.pts[0], B = it.pts[it.pts.length - 1]; const L = d2(A, B); if (L < size * 0.01) continue;
+    const nx = -(B[1] - A[1]) / L, ny = (B[0] - A[0]) / L, w = L;
+    a += w * nx * nx; b += w * nx * ny; c += w * ny * ny;
+    const k = nx * A[0] + ny * A[1]; rx += w * nx * k; ry += w * ny * k; cnt++;
+    lines.push([nx, ny, k]);
+  }
+  const det = a * c - b * b;
+  if (cnt >= 6 && Math.abs(det) > 1e-9 * (a + c) * (a + c)) {
+    const cx = (c * rx - b * ry) / det, cy = (a * ry - b * rx) / det;
+    const res = lines.reduce((s, [nx, ny, k]) => s + Math.abs(nx * cx + ny * cy - k), 0) / lines.length;
+    if (res < size * 0.03 && cx > minX && cx < maxX && cy > minY && cy < maxY) return { c: [cx, cy], radial: true };
+  }
+  return { c: bb, radial: false };
+}
+function buildSource(items, kind, mmPerSvg, center) {
+  items = items.filter(it => it.pts.length >= 2 && polyLen(it.pts) > 0);
+  if (!items.length) throw new Error('변환할 선을 찾지 못했어요');
+  const { c, radial } = center ? { c: center, radial: true } : estimateCenter(items);
+  let rmax = 0;
+  items.forEach(it => it.pts.forEach(p => { rmax = Math.max(rmax, d2(p, c)); }));
+  const k = 10 / rmax;
+  const wmax = Math.max(...items.map(it => it.w)) || 1;
+  let rMin = Infinity;
+  const straws = items.map((it, i) => {
+    const pts = it.pts.map(p => [(p[0] - c[0]) * k, (p[1] - c[1]) * k]);
+    pts.forEach(p => { rMin = Math.min(rMin, Math.hypot(p[0], p[1])); });
+    return { id: i, pts, w: it.w / wmax, color: it.color, group: it.group, closed: !!it.closed };
+  });
+  return {
+    kind, straws, rMin: Math.min(rMin, 9), radial,
+    mmPerUnit: mmPerSvg ? rmax * mmPerSvg / 10 : null,
+    groups: [...new Set(straws.map(s => s.group))]
+  };
+}
+const midR = s => { const m = s.pts[Math.floor((s.pts.length - 1) / 2)], n = s.pts[Math.ceil((s.pts.length - 1) / 2)]; return Math.hypot((m[0] + n[0]) / 2, (m[1] + n[1]) / 2); };
+const midAngle = s => { const A = s.pts[0], B = s.pts[s.pts.length - 1]; return Math.atan2((A[1] + B[1]) / 2, (A[0] + B[0]) / 2); };
+function splitByRadii(s, bounds) {
+  if (!bounds.length || s.closed) return [s];
+  const out = []; let cur = [s.pts[0]];
+  for (let i = 0; i < s.pts.length - 1; i++) {
+    const A = s.pts[i], B = s.pts[i + 1]; const ts = [];
+    const dx = B[0] - A[0], dy = B[1] - A[1], a = dx * dx + dy * dy;
+    if (a > 1e-12) for (const r of bounds) {
+      const bb = 2 * (A[0] * dx + A[1] * dy), cc = A[0] * A[0] + A[1] * A[1] - r * r, disc = bb * bb - 4 * a * cc;
+      if (disc < 0) continue; const sq = Math.sqrt(disc);
+      for (const t of [(-bb - sq) / (2 * a), (-bb + sq) / (2 * a)]) if (t > 1e-6 && t < 1 - 1e-6) ts.push(t);
+    }
+    ts.sort((x, y) => x - y);
+    for (const t of ts) { const p = lerp2(A, B, t); cur.push(p); out.push(cur); cur = [p]; }
+    cur.push(B);
+  }
+  out.push(cur);
+  return out.filter(p => polyLen(p) > 0.02).map((p, j) => ({ ...s, pts: p, sub: j }));
+}
+function detectBoundaries(straws) {
+  let lo = Infinity, hi = 0; const rs = [];
+  for (const s of straws) {
+    if (s.closed) continue;
+    const r0 = Math.hypot(...s.pts[0]), r1 = Math.hypot(...s.pts[s.pts.length - 1]);
+    lo = Math.min(lo, r0, r1); hi = Math.max(hi, r0, r1); rs.push(r0, r1);
+  }
+  const span = hi - lo; if (!(span > 1e-6)) return [];
+  const B = 120, h = new Array(B).fill(0);
+  for (const r of rs) { const f = (r - lo) / span; if (f < 0.03 || f > 0.97) continue; h[Math.min(B - 1, Math.floor(f * B))]++; }
+  const thr = Math.max(4, straws.length * 0.12), peaks = [];
+  for (let i = 0; i < B; i++) {
+    const v = h[i] + (h[i - 1] || 0) + (h[i + 1] || 0);
+    if (v >= thr && h[i] >= (h[i - 1] || 0) && h[i] > (h[i + 1] || 0) - 1e-9 && h[i] > 0) {
+      const r = lo + (i + 0.5) / B * span;
+      if (!peaks.length || r - peaks[peaks.length - 1] > span * 0.04) peaks.push(r);
+    }
+  }
+  return peaks;
+}
+function computeOffsets(straws, nR) {
+  const maj = Array.from({ length: nR }, () => []), all = Array.from({ length: nR }, () => []);
+  for (const s of straws) { if (s.closed) continue; const a = midAngle(s); all[s.ring].push(a); if (s.w >= 0.6) maj[s.ring].push(a); }
+  const pick = k => (maj[k].length && maj[k].length < all[k].length ? maj[k] : all[k]);
+  const ref = nR - 1, refSet = pick(ref);
+  const sample = a => a.length > 40 ? a.filter((_, i) => i % Math.ceil(a.length / 40) === 0) : a;
+  return Array.from({ length: nR }, (_, k) => {
+    if (k === ref) return 0;
+    const set = pick(k); if (!set.length || !refSet.length) return 0;
+    const S = sample(set), R = sample(refSet);
+    let best = 0, bestScore = Infinity;
+    for (const a of S) for (const b of R) {
+      const d = wrapPI(b - a); let score = 0;
+      for (const x of S) { let m = Infinity; for (const y of R) m = Math.min(m, Math.abs(wrapPI(x + d - y))); score += m; }
+      if (score < bestScore - 1e-4 || (Math.abs(score - bestScore) <= 1e-4 && Math.abs(d) < Math.abs(best))) { bestScore = score; best = d; }
+    }
+    // refine with every tick of the ring (not only the sample) so the rings overlap exactly
+    const allK = all[k], allR = all[ref];
+    for (let it = 0; it < 3; it++) {
+      let sum = 0;
+      for (const x of allK) { let m = Infinity, md = 0; for (const y of allR) { const dd = wrapPI(y - (x + best)); if (Math.abs(dd) < m) { m = Math.abs(dd); md = dd; } } sum += md; }
+      best += sum / allK.length;
+    }
+    return best / DEG;
+  });
+}
+function prepareRings(src, ringSplit) {
+  let straws = src.straws.map(s => ({ ...s }));
+  let nR;
+  if (src.groups.length > 1 && !ringSplit) {
+    const gm = src.groups.map(g => { const ss = straws.filter(s => s.group === g); return { g, r: ss.reduce((a, s) => a + midR(s), 0) / ss.length }; }).sort((a, b) => a.r - b.r);
+    straws.forEach(s => { s.ring = gm.findIndex(x => x.g === s.group); });
+    nR = gm.length;
+  } else {
+    let bounds;
+    if (!ringSplit) bounds = detectBoundaries(straws);
+    else bounds = Array.from({ length: ringSplit - 1 }, (_, i) => src.rMin + (10 - src.rMin) * (i + 1) / ringSplit);
+    straws = straws.flatMap(s => splitByRadii(s, bounds));
+    straws.forEach(s => { const r = midR(s); s.ring = bounds.filter(b => b < r).length; });
+    const used = [...new Set(straws.map(s => s.ring))].sort((a, b) => a - b);
+    straws.forEach(s => { s.ring = used.indexOf(s.ring); });
+    nR = used.length;
+  }
+  straws.forEach((s, i) => { s.uid = i; });
+  const rings = Array.from({ length: nR }, (_, k) => {
+    const ss = straws.filter(s => s.ring === k);
+    let rIn = Infinity, rOut = 0;
+    ss.forEach(s => s.pts.forEach(p => { const r = Math.hypot(p[0], p[1]); rIn = Math.min(rIn, r); rOut = Math.max(rOut, r); }));
+    return { k, count: ss.length, rIn, rOut };
+  });
+  const offsets = computeOffsets(straws, nR);
+  rings.forEach((r, k) => { r.offset = offsets[k]; });
+  const refMaj = straws.filter(s => s.ring === nR - 1 && s.w >= 0.6).length;
+  const period = refMaj >= 2 && refMaj < straws.filter(s => s.ring === nR - 1).length ? 360 / refMaj : 360;
+  return { straws, rings, period };
+}
+
+/* ================= straw path & geometry ================= */
+function remapRadius(r, src, st) {
+  const inner = st.innerR * 10, outer = Math.max(inner + 0.5, 10 * st.spread);
+  const span = 10 - src.rMin;
+  const rho = span > 1e-6 ? (r - src.rMin) / span : 0;
+  return Math.max(0.02, inner + rho * (outer - inner));
+}
+function scalePolyline(pts, f) {
+  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + d2(pts[i - 1], pts[i]));
+  const L = cum[cum.length - 1]; if (L < 1e-9) return pts;
+  const a = L * (0.5 - f / 2), b = L * (0.5 + f / 2);
+  const dir = (P, Q) => { const l = d2(P, Q) || 1; return [(Q[0] - P[0]) / l, (Q[1] - P[1]) / l]; };
+  const at = s => {
+    if (s <= 0) { const d = dir(pts[0], pts[1]); return [pts[0][0] + d[0] * s, pts[0][1] + d[1] * s]; }
+    if (s >= L) { const n = pts.length, d = dir(pts[n - 2], pts[n - 1]); return [pts[n - 1][0] + d[0] * (s - L), pts[n - 1][1] + d[1] * (s - L)]; }
+    for (let k = 0; k < pts.length - 1; k++) if (s <= cum[k + 1]) return lerp2(pts[k], pts[k + 1], (s - cum[k]) / ((cum[k + 1] - cum[k]) || 1));
+    return pts[pts.length - 1];
+  };
+  const out = [at(a)];
+  for (let k = 1; k < pts.length - 1; k++) if (cum[k] > a && cum[k] < b) out.push(pts[k]);
+  out.push(at(b));
+  return out;
+}
+function resamplePoly(pts, M, closed) {
+  const P = closed ? [...pts, pts[0]] : pts;
+  const cum = [0]; for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + d2(P[i - 1], P[i]));
+  const L = cum[cum.length - 1]; const out = [];
+  const cnt = closed ? M : M;
+  for (let j = 0; j < cnt; j++) {
+    const s = closed ? j / M * L : j / (M - 1) * L;
+    let k = 0; while (k < P.length - 2 && cum[k + 1] < s) k++;
+    out.push(lerp2(P[k], P[k + 1], (s - cum[k]) / ((cum[k + 1] - cum[k]) || 1)));
+  }
+  return out;
+}
+function strawPath(s, src, st) {
+  let pts = s.pts.map(([x, z]) => { const r = Math.hypot(x, z), th = Math.atan2(z, x), rr = remapRadius(r, src, st); return [rr * Math.cos(th), rr * Math.sin(th)]; });
+  if (!s.closed) {
+    const f = st.length * Math.max(0.15, 1 + st.lVar * (hash(s.uid, 1, st.seed) * 2 - 1) * 0.8);
+    if (Math.abs(f - 1) > 1e-4) pts = scalePolyline(pts, f);
+  }
+  const L = polyLen(pts);
+  const y0 = st.heightVar * (hash(s.uid, 2, st.seed) * 2 - 1) * 1.2;
+  const curv = st.curvature;
+  if (Math.abs(curv) > 1e-4 && !s.closed) {
+    const M = clamp(Math.round(L * 7) + 4, 6, 30);
+    const rs = resamplePoly(pts, M, false);
+    const A = rs[0], B = rs[M - 1], cl = d2(A, B) || 1, nrm = [-(B[1] - A[1]) / cl, (B[0] - A[0]) / cl];
+    let dir = st.curveDir, sg = 1;
+    if (dir === 'random') { dir = hash(s.uid, 5, st.seed) < 0.5 ? 'arch' : 'side'; sg = hash(s.uid, 6, st.seed) < 0.5 ? -1 : 1; }
+    return rs.map((p, j) => {
+      const u = j / (M - 1), d = sg * 4 * u * (1 - u) * curv * L * 0.35;
+      return dir === 'arch' ? new THREE.Vector3(p[0], y0 + d, p[1]) : new THREE.Vector3(p[0] + nrm[0] * d, y0, p[1] + nrm[1] * d);
+    });
+  }
+  if (s.closed && pts.length > 64) pts = resamplePoly(pts, 64, true);
+  return pts.map(p => new THREE.Vector3(p[0], y0, p[1]));
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+function newBuf() { return { pos: [], nor: [], uv: [], col: [], idx: [], vc: 0 }; }
+/** Append one hollow straw: outer wall, inner wall, annular rims (and cut faces when half). */
+function pushStraw(buf, P, Ro, Ri, radial, half, col, closed) {
+  const n = P.length; if (n < 2) return null;
+  const T = [], N = [], B = [];
+  for (let i = 0; i < n; i++) {
+    const a = P[closed ? (i - 1 + n) % n : Math.max(i - 1, 0)], b = P[closed ? (i + 1) % n : Math.min(i + 1, n - 1)];
+    T[i] = new THREE.Vector3().subVectors(b, a).normalize();
+  }
+  let prev = UP.clone();
+  for (let i = 0; i < n; i++) {
+    let nn = prev.clone().addScaledVector(T[i], -prev.dot(T[i]));
+    if (nn.lengthSq() < 1e-6) { nn = new THREE.Vector3(1, 0, 0); nn.addScaledVector(T[i], -nn.dot(T[i])); }
+    nn.normalize(); N[i] = nn; B[i] = new THREE.Vector3().crossVectors(T[i], nn); prev = nn;
+  }
+  const S = [0]; for (let i = 1; i < n; i++) S.push(S[i - 1] + P[i].distanceTo(P[i - 1]));
+  const Ltot = S[n - 1] + (closed ? P[n - 1].distanceTo(P[0]) : 0);
+  const vScale = 1 / Math.max(0.02, Ro * 6);
+  const J = half ? Math.max(3, Math.round(radial / 2)) : radial;
+  const ang = j => half ? Math.PI / 2 + j / J * Math.PI : j / J * Math.PI * 2;
+  const cosA = [], sinA = []; for (let j = 0; j <= J; j++) { cosA.push(Math.cos(ang(j))); sinA.push(Math.sin(ang(j))); }
+  const rings = closed ? n + 1 : n;
+  const { pos, nor, uv, col: cl, idx } = buf;
+  const vert = (x, y, z, nx, ny, nz, u, v) => { pos.push(x, y, z); nor.push(nx, ny, nz); uv.push(u, v); cl.push(col.r, col.g, col.b); return buf.vc++; };
+  const tri = (a, b, c) => {
+    const ax = pos[a * 3], ay = pos[a * 3 + 1], az = pos[a * 3 + 2];
+    const e1x = pos[b * 3] - ax, e1y = pos[b * 3 + 1] - ay, e1z = pos[b * 3 + 2] - az;
+    const e2x = pos[c * 3] - ax, e2y = pos[c * 3 + 1] - ay, e2z = pos[c * 3 + 2] - az;
+    const cx = e1y * e2z - e1z * e2y, cy = e1z * e2x - e1x * e2z, cz = e1x * e2y - e1y * e2x;
+    const nx = nor[a * 3] + nor[b * 3] + nor[c * 3], ny = nor[a * 3 + 1] + nor[b * 3 + 1] + nor[c * 3 + 1], nz = nor[a * 3 + 2] + nor[b * 3 + 2] + nor[c * 3 + 2];
+    if (cx * nx + cy * ny + cz * nz < 0) idx.push(a, c, b); else idx.push(a, b, c);
+  };
+  const dirAt = (k, j) => [N[k].x * cosA[j] + B[k].x * sinA[j], N[k].y * cosA[j] + B[k].y * sinA[j], N[k].z * cosA[j] + B[k].z * sinA[j]];
+  // walls
+  for (const [rad, sg] of [[Ro, 1], [Ri, -1]]) {
+    const base = buf.vc;
+    for (let i = 0; i < rings; i++) {
+      const k = i % n, s = i === n ? Ltot : S[k];
+      for (let j = 0; j <= J; j++) {
+        const d = dirAt(k, j);
+        vert(P[k].x + d[0] * rad, P[k].y + d[1] * rad, P[k].z + d[2] * rad, d[0] * sg, d[1] * sg, d[2] * sg, j / J, s * vScale);
+      }
+    }
+    for (let i = 0; i < rings - 1; i++) for (let j = 0; j < J; j++) {
+      const a = base + i * (J + 1) + j, b = a + J + 1, c = b + 1, d = a + 1;
+      tri(a, b, d); tri(b, c, d);
+    }
+  }
+  // annular rims at both open ends -> the visible ring cross-section
+  if (!closed) {
+    for (const k of [0, n - 1]) {
+      const sg = k === 0 ? -1 : 1, nx = T[k].x * sg, ny = T[k].y * sg, nz = T[k].z * sg, v = S[k] * vScale;
+      const o = buf.vc;
+      for (let j = 0; j <= J; j++) { const d = dirAt(k, j); vert(P[k].x + d[0] * Ro, P[k].y + d[1] * Ro, P[k].z + d[2] * Ro, nx, ny, nz, j / J, v); }
+      const ii = buf.vc;
+      for (let j = 0; j <= J; j++) { const d = dirAt(k, j); vert(P[k].x + d[0] * Ri, P[k].y + d[1] * Ri, P[k].z + d[2] * Ri, nx, ny, nz, j / J, v); }
+      for (let j = 0; j < J; j++) { tri(o + j, ii + j, o + j + 1); tri(o + j + 1, ii + j, ii + j + 1); }
+    }
+  }
+  // half-cut: flat wall cross-sections along the cut plane
+  if (half) {
+    for (const j of [0, J]) {
+      const base = buf.vc;
+      for (let i = 0; i < rings; i++) {
+        const k = i % n, d = dirAt(k, j), s = i === n ? Ltot : S[k];
+        vert(P[k].x + d[0] * Ro, P[k].y + d[1] * Ro, P[k].z + d[2] * Ro, N[k].x, N[k].y, N[k].z, 0, s * vScale);
+        vert(P[k].x + d[0] * Ri, P[k].y + d[1] * Ri, P[k].z + d[2] * Ri, N[k].x, N[k].y, N[k].z, 1, s * vScale);
+      }
+      for (let i = 0; i < rings - 1; i++) { const a = base + i * 2; tri(a, a + 2, a + 1); tri(a + 1, a + 2, a + 3); }
+    }
+  }
+  return { T, N };
+}
+function bufToGeometry(buf) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(buf.pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(buf.nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(buf.uv, 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(buf.col, 3));
+  g.setIndex(buf.vc > 65535 ? new THREE.Uint32BufferAttribute(buf.idx, 1) : new THREE.Uint16BufferAttribute(buf.idx, 1));
+  g.computeBoundingBox(); g.computeBoundingSphere();
+  return g;
+}
+
+
+const DEFAULT_SVG = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg id=\"Layer_1\" data-name=\"Layer 1\" xmlns=\"http://www.w3.org/2000/svg\" width=\"315.4585mm\" height=\"365.9226mm\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 894.2131 1037.261\">\n  <defs>\n    <clipPath id=\"clippath\">\n      <circle cx=\"447.1065\" cy=\"523.3948\" r=\"101.6361\" transform=\"translate(-239.1416 469.4509) rotate(-45)\" fill=\"none\"/>\n    </clipPath>\n    <clipPath id=\"clippath-1\">\n      <path d=\"M515.4135,370.3051c-84.5492-37.7249-183.6719.2337-221.3968,84.7828-37.7249,84.5491.2337,183.6718,84.7829,221.3967,84.5492,37.7249,183.6719-.2337,221.3968-84.7828,37.7249-84.5491-.2337-183.6718-84.7829-221.3967ZM405.693,616.2109c-51.2609-22.8721-74.2747-82.9688-51.4027-134.2296,22.872-51.2608,82.9687-74.2746,134.2297-51.4025,51.2609,22.8721,74.2747,82.9688,51.4027,134.2296-22.872,51.2608-82.9687,74.2746-134.2297,51.4025Z\" fill=\"none\"/>\n    </clipPath>\n    <clipPath id=\"clippath-2\">\n      <path d=\"M364.9264,269.7795c-140.0679,45.3868-216.822,195.7275-171.4352,335.7954,45.3868,140.0679,195.7275,216.822,335.7954,171.4352,140.0679-45.3868,216.822-195.7275,171.4352-335.7954-45.3868-140.0679-195.7275-216.822-335.7954-171.4352ZM498.7816,682.869c-88.0752,28.5394-182.61-19.7239-211.1493-107.799-28.5394-88.0751,19.7239-182.6099,107.7991-211.1493,88.0752-28.5394,182.61,19.7239,211.1493,107.799,28.5394,88.0751-19.7239,182.6099-107.7991,211.1493Z\" fill=\"none\"/>\n    </clipPath>\n    <clipPath id=\"clippath-3\">\n      <path d=\"M447.1065,87.0268C206.1071,87.0268,10.7385,282.3955,10.7385,523.3948s195.3686,436.368,436.368,436.368,436.368-195.3687,436.368-436.368S688.106,87.0268,447.1065,87.0268ZM447.1065,789.9925c-147.2378,0-266.5976-119.3598-266.5976-266.5976s119.3598-266.5976,266.5976-266.5976,266.5976,119.3598,266.5976,266.5976-119.3598,266.5976-266.5976,266.5976Z\" fill=\"none\"/>\n    </clipPath>\n  </defs>\n  <g clip-path=\"url(#clippath)\">\n    <g>\n      <line x1=\"868.6227\" y1=\"410.5176\" x2=\"505.5157\" y2=\"507.4339\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      <g>\n        <line x1=\"25.5904\" y1=\"636.2721\" x2=\"388.6974\" y2=\"539.3558\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"138.5015\" y1=\"831.9075\" x2=\"404.5032\" y2=\"566.422\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"334.103\" y1=\"944.8772\" x2=\"431.7246\" y2=\"581.9591\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"559.9838\" y1=\"944.911\" x2=\"463.0675\" y2=\"581.804\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"755.6192\" y1=\"831.9999\" x2=\"490.1337\" y2=\"565.9982\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"868.5889\" y1=\"636.3983\" x2=\"505.6708\" y2=\"538.7768\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"755.7116\" y1=\"214.8822\" x2=\"489.7098\" y2=\"480.3677\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"560.11\" y1=\"101.9125\" x2=\"462.4885\" y2=\"464.8306\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"334.2293\" y1=\"101.8787\" x2=\"431.1456\" y2=\"464.9857\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"138.5939\" y1=\"214.7898\" x2=\"404.0794\" y2=\"480.7915\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"16.121\" y1=\"455.0673\" x2=\"387.2552\" y2=\"514.2188\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"11.3399\" y1=\"500.4919\" x2=\"386.6239\" y2=\"520.5252\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"11.333\" y1=\"546.1674\" x2=\"386.6553\" y2=\"526.8631\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"16.1006\" y1=\"591.5933\" x2=\"387.349\" y2=\"533.163\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"39.6984\" y1=\"679.7142\" x2=\"390.6857\" y2=\"545.3738\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"58.27\" y1=\"721.4436\" x2=\"393.2922\" y2=\"551.151\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"81.1018\" y1=\"761.0032\" x2=\"396.4884\" y2=\"556.624\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"107.9437\" y1=\"797.9594\" x2=\"400.239\" y2=\"561.7331\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"172.4404\" y1=\"862.4755\" x2=\"409.2342\" y2=\"570.6396\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"209.3886\" y1=\"889.3284\" x2=\"414.3801\" y2=\"574.3395\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"248.9413\" y1=\"912.172\" x2=\"419.8845\" y2=\"577.4813\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"290.6652\" y1=\"930.7562\" x2=\"425.6872\" y2=\"580.0305\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"378.779\" y1=\"954.3803\" x2=\"437.9305\" y2=\"583.2462\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"424.2036\" y1=\"959.1615\" x2=\"444.2369\" y2=\"583.8775\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"469.879\" y1=\"959.1684\" x2=\"450.5748\" y2=\"583.8461\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"515.305\" y1=\"954.4008\" x2=\"456.8746\" y2=\"583.1524\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"603.4259\" y1=\"930.803\" x2=\"469.0855\" y2=\"579.8156\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"645.1553\" y1=\"912.2314\" x2=\"474.8627\" y2=\"577.2091\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"684.7149\" y1=\"889.3995\" x2=\"480.3357\" y2=\"574.013\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"721.6711\" y1=\"862.5577\" x2=\"485.4447\" y2=\"570.2623\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"786.1872\" y1=\"798.061\" x2=\"494.3513\" y2=\"561.2672\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"813.0401\" y1=\"761.1128\" x2=\"498.0512\" y2=\"556.1213\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"835.8837\" y1=\"721.56\" x2=\"501.193\" y2=\"550.6169\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"854.4679\" y1=\"679.8362\" x2=\"503.7421\" y2=\"544.8142\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"878.092\" y1=\"591.7224\" x2=\"506.9578\" y2=\"532.5709\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"882.8732\" y1=\"546.2978\" x2=\"507.5891\" y2=\"526.2645\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"882.8801\" y1=\"500.6223\" x2=\"507.5578\" y2=\"519.9266\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"878.1125\" y1=\"455.1964\" x2=\"506.8641\" y2=\"513.6267\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"854.5147\" y1=\"367.0755\" x2=\"503.5273\" y2=\"501.4159\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"835.943\" y1=\"325.3461\" x2=\"500.9208\" y2=\"495.6387\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"813.1112\" y1=\"285.7865\" x2=\"497.7247\" y2=\"490.1656\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"786.2694\" y1=\"248.8303\" x2=\"493.974\" y2=\"485.0566\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"721.7727\" y1=\"184.3142\" x2=\"484.9789\" y2=\"476.1501\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"684.8244\" y1=\"157.4613\" x2=\"479.833\" y2=\"472.4502\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"645.2717\" y1=\"134.6177\" x2=\"474.3286\" y2=\"469.3084\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"603.5479\" y1=\"116.0335\" x2=\"468.5259\" y2=\"466.7592\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"515.4341\" y1=\"92.4094\" x2=\"456.2826\" y2=\"463.5435\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"470.0095\" y1=\"87.6282\" x2=\"449.9762\" y2=\"462.9122\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"424.334\" y1=\"87.6213\" x2=\"443.6383\" y2=\"462.9436\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"378.908\" y1=\"92.3889\" x2=\"437.3384\" y2=\"463.6373\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"290.7872\" y1=\"115.9867\" x2=\"425.1276\" y2=\"466.9741\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"249.0578\" y1=\"134.5583\" x2=\"419.3504\" y2=\"469.5806\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"209.4982\" y1=\"157.3902\" x2=\"413.8773\" y2=\"472.7767\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"172.5419\" y1=\"184.232\" x2=\"408.7683\" y2=\"476.5274\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"108.0259\" y1=\"248.7287\" x2=\"399.8618\" y2=\"485.5225\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"81.173\" y1=\"285.6769\" x2=\"396.1619\" y2=\"490.6684\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"58.3293\" y1=\"325.2297\" x2=\"393.0201\" y2=\"496.1728\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"39.7452\" y1=\"366.9535\" x2=\"390.4709\" y2=\"501.9755\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"25.6242\" y1=\"410.3914\" x2=\"388.5423\" y2=\"508.0129\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      </g>\n    </g>\n  </g>\n  <g clip-path=\"url(#clippath-1)\">\n    <g>\n      <line x1=\"881.0833\" y1=\"477.773\" x2=\"507.2923\" y2=\"516.7573\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      <g>\n        <line x1=\"13.1298\" y1=\"569.0167\" x2=\"386.9208\" y2=\"530.0324\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"94.0826\" y1=\"779.8929\" x2=\"398.3029\" y2=\"559.236\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"269.6279\" y1=\"922.0406\" x2=\"422.7619\" y2=\"578.836\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"492.7284\" y1=\"957.3716\" x2=\"453.744\" y2=\"583.5806\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"703.6046\" y1=\"876.4188\" x2=\"482.9477\" y2=\"572.1985\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"845.7523\" y1=\"700.8735\" x2=\"502.5477\" y2=\"547.7395\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"800.1305\" y1=\"266.8968\" x2=\"495.9102\" y2=\"487.5537\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"624.5852\" y1=\"124.7491\" x2=\"471.4512\" y2=\"467.9537\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"401.4847\" y1=\"89.4181\" x2=\"440.469\" y2=\"463.2091\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"190.6085\" y1=\"170.3709\" x2=\"411.2654\" y2=\"474.5912\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"32.093\" y1=\"388.5583\" x2=\"389.4244\" y2=\"504.9788\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"20.2722\" y1=\"432.6776\" x2=\"387.8154\" y2=\"511.1091\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"13.1279\" y1=\"477.7909\" x2=\"386.856\" y2=\"517.374\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"10.7384\" y1=\"523.4039\" x2=\"386.5567\" y2=\"523.7049\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"20.276\" y1=\"614.1297\" x2=\"387.9443\" y2=\"536.2871\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"32.0986\" y1=\"658.2486\" x2=\"389.616\" y2=\"542.4006\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"48.4681\" y1=\"700.89\" x2=\"391.9176\" y2=\"548.3059\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"69.2052\" y1=\"741.5867\" x2=\"394.8238\" y2=\"553.9383\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"122.8278\" y1=\"815.3888\" x2=\"402.3167\" y2=\"564.141\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"155.126\" y1=\"847.6856\" x2=\"406.8212\" y2=\"568.5996\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"190.6231\" y1=\"876.4294\" x2=\"411.767\" y2=\"572.5629\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"228.9303\" y1=\"901.3052\" x2=\"417.1001\" y2=\"575.9876\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"312.2699\" y1=\"938.4084\" x2=\"428.6905\" y2=\"581.077\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"356.3893\" y1=\"950.2292\" x2=\"434.8208\" y2=\"582.686\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"401.5026\" y1=\"957.3735\" x2=\"441.0857\" y2=\"583.6454\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"447.1156\" y1=\"959.763\" x2=\"447.4166\" y2=\"583.9447\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"537.8414\" y1=\"950.2254\" x2=\"459.9988\" y2=\"582.5571\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"581.9603\" y1=\"938.4028\" x2=\"466.1123\" y2=\"580.8854\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"624.6017\" y1=\"922.0333\" x2=\"472.0176\" y2=\"578.5838\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"665.2984\" y1=\"901.2962\" x2=\"477.65\" y2=\"575.6775\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"739.1005\" y1=\"847.6735\" x2=\"487.8527\" y2=\"568.1847\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"771.3973\" y1=\"815.3754\" x2=\"492.3113\" y2=\"563.6802\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"800.1411\" y1=\"779.8783\" x2=\"496.2746\" y2=\"558.7343\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"825.0169\" y1=\"741.5711\" x2=\"499.6993\" y2=\"553.4013\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"862.1201\" y1=\"658.2314\" x2=\"504.7887\" y2=\"541.8109\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"873.9409\" y1=\"614.1121\" x2=\"506.3977\" y2=\"535.6806\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"881.0851\" y1=\"568.9988\" x2=\"507.3571\" y2=\"529.4157\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"883.4747\" y1=\"523.3858\" x2=\"507.6564\" y2=\"523.0848\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"873.9371\" y1=\"432.66\" x2=\"506.2688\" y2=\"510.5026\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"862.1145\" y1=\"388.5411\" x2=\"504.5971\" y2=\"504.3891\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"845.745\" y1=\"345.8997\" x2=\"502.2955\" y2=\"498.4838\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"825.0079\" y1=\"305.203\" x2=\"499.3892\" y2=\"492.8514\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"771.3852\" y1=\"231.4009\" x2=\"491.8964\" y2=\"482.6487\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"739.0871\" y1=\"199.1041\" x2=\"487.3919\" y2=\"478.1901\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"703.59\" y1=\"170.3603\" x2=\"482.446\" y2=\"474.2268\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"665.2828\" y1=\"145.4844\" x2=\"477.113\" y2=\"470.8021\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"581.9431\" y1=\"108.3813\" x2=\"465.5226\" y2=\"465.7127\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"537.8238\" y1=\"96.5605\" x2=\"459.3923\" y2=\"464.1037\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"492.7105\" y1=\"89.4162\" x2=\"453.1274\" y2=\"463.1443\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"447.0975\" y1=\"87.0267\" x2=\"446.7965\" y2=\"462.845\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"356.3717\" y1=\"96.5643\" x2=\"434.2143\" y2=\"464.2326\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"312.2528\" y1=\"108.3869\" x2=\"428.1007\" y2=\"465.9043\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"269.6114\" y1=\"124.7564\" x2=\"422.1955\" y2=\"468.2059\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"228.9147\" y1=\"145.4935\" x2=\"416.5631\" y2=\"471.1122\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"155.1126\" y1=\"199.1162\" x2=\"406.3604\" y2=\"478.605\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"122.8158\" y1=\"231.4143\" x2=\"401.9018\" y2=\"483.1095\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"94.072\" y1=\"266.9114\" x2=\"397.9385\" y2=\"488.0554\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"69.1961\" y1=\"305.2186\" x2=\"394.5138\" y2=\"493.3884\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"48.4607\" y1=\"345.9162\" x2=\"391.6654\" y2=\"499.0502\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      </g>\n    </g>\n  </g>\n  <g clip-path=\"url(#clippath-2)\">\n    <g>\n      <line x1=\"739.0871\" y1=\"199.1041\" x2=\"487.3919\" y2=\"478.1901\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      <g>\n        <line x1=\"155.126\" y1=\"847.6856\" x2=\"406.8212\" y2=\"568.5996\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"356.3893\" y1=\"950.2292\" x2=\"434.8208\" y2=\"582.686\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"581.9603\" y1=\"938.4028\" x2=\"466.1123\" y2=\"580.8854\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"771.3973\" y1=\"815.3754\" x2=\"492.3113\" y2=\"563.6802\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"873.9409\" y1=\"614.1121\" x2=\"506.3977\" y2=\"535.6806\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"862.1145\" y1=\"388.5411\" x2=\"504.5971\" y2=\"504.3891\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"537.8237\" y1=\"96.5605\" x2=\"459.3923\" y2=\"464.1037\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"312.2528\" y1=\"108.3869\" x2=\"428.1007\" y2=\"465.9043\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"122.8158\" y1=\"231.4143\" x2=\"401.9018\" y2=\"483.1095\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"20.2722\" y1=\"432.6776\" x2=\"387.8154\" y2=\"511.1091\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"48.4681\" y1=\"700.89\" x2=\"391.9176\" y2=\"548.3059\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"69.2052\" y1=\"741.5867\" x2=\"394.8238\" y2=\"553.9383\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"94.0826\" y1=\"779.8929\" x2=\"398.3029\" y2=\"559.236\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"122.8278\" y1=\"815.3888\" x2=\"402.3167\" y2=\"564.141\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"190.6231\" y1=\"876.4294\" x2=\"411.767\" y2=\"572.5629\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"228.9303\" y1=\"901.3052\" x2=\"417.1001\" y2=\"575.9876\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"269.6279\" y1=\"922.0406\" x2=\"422.7619\" y2=\"578.836\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"312.2699\" y1=\"938.4084\" x2=\"428.6905\" y2=\"581.077\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"401.5026\" y1=\"957.3735\" x2=\"441.0857\" y2=\"583.6454\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"447.1156\" y1=\"959.763\" x2=\"447.4166\" y2=\"583.9447\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"492.7284\" y1=\"957.3716\" x2=\"453.744\" y2=\"583.5806\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"537.8414\" y1=\"950.2254\" x2=\"459.9988\" y2=\"582.5571\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"624.6017\" y1=\"922.0333\" x2=\"472.0176\" y2=\"578.5838\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"665.2984\" y1=\"901.2962\" x2=\"477.65\" y2=\"575.6775\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"703.6046\" y1=\"876.4188\" x2=\"482.9477\" y2=\"572.1985\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"739.1005\" y1=\"847.6735\" x2=\"487.8527\" y2=\"568.1847\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"800.1411\" y1=\"779.8783\" x2=\"496.2746\" y2=\"558.7343\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"825.0169\" y1=\"741.5711\" x2=\"499.6993\" y2=\"553.4013\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"845.7523\" y1=\"700.8735\" x2=\"502.5477\" y2=\"547.7395\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"862.1201\" y1=\"658.2314\" x2=\"504.7887\" y2=\"541.8109\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"881.0851\" y1=\"568.9988\" x2=\"507.3571\" y2=\"529.4157\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"883.4747\" y1=\"523.3858\" x2=\"507.6564\" y2=\"523.0848\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"881.0833\" y1=\"477.773\" x2=\"507.2923\" y2=\"516.7573\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"873.9371\" y1=\"432.66\" x2=\"506.2688\" y2=\"510.5026\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"845.745\" y1=\"345.8997\" x2=\"502.2955\" y2=\"498.4838\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"825.0079\" y1=\"305.203\" x2=\"499.3892\" y2=\"492.8514\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"800.1305\" y1=\"266.8968\" x2=\"495.9102\" y2=\"487.5537\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"771.3852\" y1=\"231.4009\" x2=\"491.8964\" y2=\"482.6487\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"703.59\" y1=\"170.3603\" x2=\"482.446\" y2=\"474.2268\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"665.2828\" y1=\"145.4844\" x2=\"477.113\" y2=\"470.8021\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"624.5852\" y1=\"124.7491\" x2=\"471.4512\" y2=\"467.9537\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"581.9431\" y1=\"108.3813\" x2=\"465.5226\" y2=\"465.7127\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"492.7105\" y1=\"89.4162\" x2=\"453.1274\" y2=\"463.1443\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"447.0975\" y1=\"87.0267\" x2=\"446.7965\" y2=\"462.845\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"401.4847\" y1=\"89.4181\" x2=\"440.469\" y2=\"463.2091\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"356.3717\" y1=\"96.5643\" x2=\"434.2143\" y2=\"464.2326\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"269.6114\" y1=\"124.7564\" x2=\"422.1955\" y2=\"468.2059\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"228.9147\" y1=\"145.4935\" x2=\"416.5631\" y2=\"471.1122\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"190.6085\" y1=\"170.3709\" x2=\"411.2654\" y2=\"474.5912\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"155.1126\" y1=\"199.1162\" x2=\"406.3604\" y2=\"478.605\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"94.072\" y1=\"266.9114\" x2=\"397.9385\" y2=\"488.0554\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"69.1961\" y1=\"305.2186\" x2=\"394.5138\" y2=\"493.3884\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"48.4607\" y1=\"345.9162\" x2=\"391.6654\" y2=\"499.0502\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"32.093\" y1=\"388.5583\" x2=\"389.4244\" y2=\"504.9788\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"13.1279\" y1=\"477.7909\" x2=\"386.856\" y2=\"517.374\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"10.7384\" y1=\"523.4039\" x2=\"386.5567\" y2=\"523.7049\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"13.1298\" y1=\"569.0167\" x2=\"386.9208\" y2=\"530.0324\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"20.276\" y1=\"614.1297\" x2=\"387.9443\" y2=\"536.2871\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"32.0986\" y1=\"658.2486\" x2=\"389.616\" y2=\"542.4006\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      </g>\n    </g>\n  </g>\n  <g clip-path=\"url(#clippath-3)\">\n    <g>\n      <line x1=\"824.833\" y1=\"304.9004\" x2=\"499.3647\" y2=\"492.8096\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      <g>\n        <line x1=\"69.38\" y1=\"741.8893\" x2=\"394.8483\" y2=\"553.9801\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"229.233\" y1=\"901.4799\" x2=\"417.1422\" y2=\"576.0116\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"447.4651\" y1=\"959.7628\" x2=\"447.4651\" y2=\"583.9444\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"665.601\" y1=\"901.1213\" x2=\"477.6918\" y2=\"575.6531\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"825.1916\" y1=\"741.2683\" x2=\"499.7233\" y2=\"553.3591\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"883.4745\" y1=\"523.0363\" x2=\"507.6561\" y2=\"523.0363\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"664.98\" y1=\"145.3098\" x2=\"477.0708\" y2=\"470.7781\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"446.748\" y1=\"87.0269\" x2=\"446.748\" y2=\"462.8453\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"228.612\" y1=\"145.6683\" x2=\"416.5213\" y2=\"471.1366\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"69.0215\" y1=\"305.5213\" x2=\"394.4898\" y2=\"493.4306\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n        <line x1=\"13.1665\" y1=\"569.3643\" x2=\"386.9261\" y2=\"530.0806\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"20.3488\" y1=\"614.4715\" x2=\"387.9547\" y2=\"536.3345\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"32.2067\" y1=\"658.581\" x2=\"389.6313\" y2=\"542.4467\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"48.6104\" y1=\"701.2092\" x2=\"391.9376\" y2=\"548.3501\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"94.2882\" y1=\"780.1756\" x2=\"398.3316\" y2=\"559.2751\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"123.0618\" y1=\"815.6485\" x2=\"402.3493\" y2=\"564.1769\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"155.3858\" y1=\"847.9194\" x2=\"406.8574\" y2=\"568.6319\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"190.9059\" y1=\"876.6347\" x2=\"411.8064\" y2=\"572.5912\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"269.9472\" y1=\"922.1827\" x2=\"422.8063\" y2=\"578.8555\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"312.6024\" y1=\"938.5163\" x2=\"428.7367\" y2=\"581.0917\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"356.7312\" y1=\"950.3017\" x2=\"434.8683\" y2=\"582.6958\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"401.8502\" y1=\"957.4098\" x2=\"441.1339\" y2=\"583.6502\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"493.076\" y1=\"957.3349\" x2=\"453.7923\" y2=\"583.5753\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"538.1832\" y1=\"950.1526\" x2=\"460.0462\" y2=\"582.5467\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"582.2926\" y1=\"938.2947\" x2=\"466.1584\" y2=\"580.8701\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"624.9209\" y1=\"921.891\" x2=\"472.0618\" y2=\"578.5638\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"703.8873\" y1=\"876.2132\" x2=\"482.9867\" y2=\"572.1697\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"739.3601\" y1=\"847.4396\" x2=\"487.8885\" y2=\"568.1521\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"771.631\" y1=\"815.1156\" x2=\"492.3435\" y2=\"563.644\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"800.3464\" y1=\"779.5955\" x2=\"496.3029\" y2=\"558.6949\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"845.8944\" y1=\"700.5542\" x2=\"502.5672\" y2=\"547.6951\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"862.2279\" y1=\"657.899\" x2=\"504.8034\" y2=\"541.7647\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"874.0134\" y1=\"613.7702\" x2=\"506.4075\" y2=\"535.6331\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"881.1215\" y1=\"568.6512\" x2=\"507.3619\" y2=\"529.3674\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"881.0466\" y1=\"477.4254\" x2=\"507.2869\" y2=\"516.7091\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"873.8643\" y1=\"432.3182\" x2=\"506.2584\" y2=\"510.4552\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"862.0064\" y1=\"388.2087\" x2=\"504.5818\" y2=\"504.343\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"845.6027\" y1=\"345.5805\" x2=\"502.2755\" y2=\"498.4396\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"799.9249\" y1=\"266.6141\" x2=\"495.8814\" y2=\"487.5146\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"771.1512\" y1=\"231.1412\" x2=\"491.8637\" y2=\"482.6128\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"738.8273\" y1=\"198.8703\" x2=\"487.3557\" y2=\"478.1578\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"703.3071\" y1=\"170.155\" x2=\"482.4066\" y2=\"474.1985\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"624.2659\" y1=\"124.607\" x2=\"471.4067\" y2=\"467.9342\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"581.6107\" y1=\"108.2734\" x2=\"465.4764\" y2=\"465.698\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"537.4818\" y1=\"96.488\" x2=\"459.3448\" y2=\"464.0939\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"492.3628\" y1=\"89.3799\" x2=\"453.0791\" y2=\"463.1395\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"401.1371\" y1=\"89.4548\" x2=\"440.4208\" y2=\"463.2144\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"356.0298\" y1=\"96.6371\" x2=\"434.1669\" y2=\"464.243\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"311.9204\" y1=\"108.495\" x2=\"428.0547\" y2=\"465.9196\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"269.2922\" y1=\"124.8987\" x2=\"422.1513\" y2=\"468.2259\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"190.3258\" y1=\"170.5765\" x2=\"411.2263\" y2=\"474.6199\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"154.8529\" y1=\"199.3501\" x2=\"406.3245\" y2=\"478.6376\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"122.582\" y1=\"231.6741\" x2=\"401.8695\" y2=\"483.1457\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"93.8667\" y1=\"267.1942\" x2=\"397.9102\" y2=\"488.0948\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"48.3187\" y1=\"346.2355\" x2=\"391.6459\" y2=\"499.0946\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"31.9851\" y1=\"388.8907\" x2=\"389.4097\" y2=\"505.025\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"20.1997\" y1=\"433.0195\" x2=\"387.8056\" y2=\"511.1566\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"13.0915\" y1=\"478.1385\" x2=\"386.8512\" y2=\"517.4223\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"1.5\"/>\n        <line x1=\"10.7385\" y1=\"523.7534\" x2=\"386.557\" y2=\"523.7534\" fill=\"none\" stroke=\"#231f20\" stroke-miterlimit=\"10\" stroke-width=\"7\"/>\n      </g>\n    </g>\n  </g>\n</svg>";
+const LOGO_SVG = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg id=\"Layer_1\" data-name=\"Layer 1\" xmlns=\"http://www.w3.org/2000/svg\" width=\"212.1342mm\" height=\"118.8552mm\" viewBox=\"0 0 601.3252 336.9124\">\n  <path d=\"M178.7556,123.9743l-13.7472,20.3585c5.9029,9.7335,9.2874,21.1457,9.3136,33.3451-.0263,35.6272-29.0163,64.6172-64.6432,64.6172-35.6013,0-64.5913-28.9637-64.6176-64.6172.0263-35.6272,29.0163-64.6172,64.6432-64.6172,10.8355.0263,21.0932,2.7023,30.066,7.451,6.7682,3.5676,12.8287,8.2901,17.8926,13.9307l.0256.0259,13.1438-19.3875c-5.404-5.3258-11.4907-9.917-18.1283-13.6422-12.7243-7.2147-27.3894-11.3338-43.0254-11.3338-48.2994,0-87.5733,39.3002-87.5996,87.573.0263,48.299,39.3265,87.5993,87.6252,87.573,48.2731.0263,87.574-39.274,87.574-87.573,0-20.2538-6.9264-38.9066-18.5228-53.7036Z\" fill=\"#231f20\"/>\n  <polygon points=\"191.6637 84.3333 170.8325 115.0808 157.6887 134.4683 105.7173 211.1278 78.3535 211.1278 139.7705 120.5117 152.7042 101.4387 172.8789 71.6615 191.6637 84.3333\" fill=\"#231f20\"/>\n  <polygon points=\"382.9898 96.8185 349.6723 220.5701 317.5088 98.0197 317.1944 96.8177 295.5838 96.8381 263.1877 220.5512 230.0588 96.8185 204.95 96.8185 250.1113 260.0995 273.3821 259.8661 306.1383 139.7487 339.1115 260.2371 361.9578 260.2859 407.3219 96.8185 382.9898 96.8185\" fill=\"#231f20\"/>\n  <polygon points=\"540.7325 96.8322 540.7325 216.7067 457.1581 97.5177 456.6786 96.8322 430.3827 96.8322 430.3827 260.2713 455.0261 260.2713 455.0261 134.534 544.138 260.2713 565.3759 260.2713 565.3759 96.8322 540.7325 96.8322\" fill=\"#231f20\"/>\n</svg>";
+
+/* ======================= logo ======================= */
+const logoMarkup = color => LOGO_SVG.replace(/<\?xml[^>]*>/, '').replace(/\s(width|height)="[^"]*"/g, '').replace(/fill="#231f20"/gi, `fill="${color}"`);
+document.querySelectorAll('[data-logo]').forEach(el => { el.innerHTML = logoMarkup('currentColor'); });
+const LOGO_ASPECT = 601.3252 / 336.9124;
+const logoImg = color => { const i = new Image(); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(logoMarkup(color).replace('<svg', '<svg width="1202" height="674"')); return i; };
+const LOGO_IMG = { dark: logoImg('#20292C'), light: logoImg('#F2F2EE') };
+
+/* ======================= state ======================= */
+const PALETTE = ['#97CFC0','#9FB1B1','#343A36','#20292C','#433C5B','#E1DBDF','#DD227E','#5C3743','#E3FEB9'];
+const PAL_PRESETS = {
+  'FIT': ['#97CFC0','#E1DBDF','#9FB1B1','#343A36'],
+  'SIP': ['#DD227E','#E1DBDF','#5C3743','#20292C'],
+  'ALCHEMY': ['#E3FEB9','#97CFC0','#433C5B','#20292C'],
+  'STANDARD': ['#E1DBDF','#9FB1B1','#343A36','#20292C'],
+  'BRIGHT': ['#DD227E','#E3FEB9','#97CFC0','#433C5B'],
+};
+const MATS = ['glass','paper','plastic','metal','frost'];
+const MAT_LABEL = { glass:'유리', paper:'종이', plastic:'플라스틱', metal:'메탈', frost:'반투명매트' };
+const BG = { white:'#FFFFFF', charcoal:'#2C322F', black:'#000000' };
+const DEFAULTS = {
+  align:0, scatter:0, explode:0, gap:1.6, tilt:0, order:'small', ringOrder:[], loop:false,
+  ringManual:Array(10).fill(0), ringY:Array(10).fill(0), ringTilt:Array(10).fill(0), extraRings:[],
+  outerD:0.22, innerPct:74, length:1, curvature:0, curveDir:'arch', dVar:0, lVar:0, linkW:true, linkK:0.65, radial:28, half:false,
+  innerR:0.139, spread:1, heightVar:0, rotation:0, seed:7,
+  palette:[...PAL_PRESETS.FIT], colorMode:'ring', accent:false, accentColor:'#DD227E',
+  material:'plastic', matMode:'all', bg:'white', shadow:true, envI:1,
+  elev:32, fov:30, autoRotate:false, lightAz:35, lightEl:58, lightI:1.6,
+  res:2, label:true, grab:true
+};
+const state = structuredClone(DEFAULTS);
+let src = null, prep = null, ORIG_INNER = 0.139;
+
+/* ======================= three ======================= */
+const $ = s => document.querySelector(s);
+const view = $('#view');
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+view.prepend(renderer.domElement);
+const canvas = renderer.domElement;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 3000);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minPolarAngle = 0.003; controls.maxPolarAngle = Math.PI * 0.997; controls.minDistance = 0.05;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+const hemi = new THREE.HemisphereLight(0xffffff, 0xd8dbd6, 0.35); scene.add(hemi);
+const keyL = new THREE.DirectionalLight(0xffffff, 1.6);
+keyL.castShadow = true; keyL.shadow.mapSize.set(2048, 2048); keyL.shadow.bias = -0.0004; keyL.shadow.normalBias = 0.015;
+scene.add(keyL, keyL.target);
+const fillL = new THREE.DirectionalLight(0xffffff, 0.3); fillL.position.set(-12, 6, -9); scene.add(fillL);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.13 }));
+ground.receiveShadow = true; scene.add(ground);
+const root = new THREE.Group(); root.name = 'OWN_straws'; scene.add(root);
+let ringGroups = [], endCands = [], ringExtent = [], strawRecs = [];
+const HOLDOUT = new THREE.MeshBasicMaterial({ colorWrite: false });
+const HELPER_MAT = new THREE.LineBasicMaterial({ color: 0x97CFC0, transparent: true, opacity: 0.95, depthTest: false });
+
+function makePaperTex() {
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d'); const id = g.createImageData(S, S);
+  for (let i = 0; i < S * S; i++) { const n = 236 + Math.random() * 19; id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = n; id.data[i * 4 + 3] = 255; }
+  g.putImageData(id, 0, 0);
+  g.strokeStyle = 'rgba(105,105,105,.6)'; g.lineWidth = 3;
+  for (const o of [-S, 0, S]) { g.beginPath(); g.moveTo(o, S); g.lineTo(o + S, 0); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+const materials = {
+  glass: new THREE.MeshPhysicalMaterial({ vertexColors:true, metalness:0, roughness:0.05, transmission:1, thickness:0.08, ior:1.5, clearcoat:1, clearcoatRoughness:0.04 }),
+  paper: new THREE.MeshPhysicalMaterial({ vertexColors:true, metalness:0, roughness:0.95, map:makePaperTex(), sheen:0.4, sheenRoughness:0.9, sheenColor:new THREE.Color(0xffffff) }),
+  plastic: new THREE.MeshPhysicalMaterial({ vertexColors:true, metalness:0, roughness:0.32, clearcoat:0.6, clearcoatRoughness:0.22 }),
+  metal: new THREE.MeshPhysicalMaterial({ vertexColors:true, metalness:1, roughness:0.2 }),
+  frost: new THREE.MeshPhysicalMaterial({ vertexColors:true, metalness:0, roughness:0.5, transmission:0.9, thickness:0.1, ior:1.45 }),
+};
+
+/* ======================= rings (base + added) ======================= */
+const GROW = 1.62, MAX_RINGS = 8, RING_ARRAYS = ['ringManual', 'ringY', 'ringTilt'];
+function buildPrep() {
+  const base = prepareRings(src, 0), refK = base.rings.length - 1;
+  const ref = base.straws.filter(s => s.ring === refK).map(s => { const A = s.pts[0], B = s.pts[s.pts.length - 1]; return { th: Math.atan2((A[1] + B[1]) / 2, (A[0] + B[0]) / 2), w: s.w, color: s.color }; });
+  const rings = base.rings.map(r => ({ ...r, extraId: null }));
+  const straws = base.straws.map(s => ({ ...s, _r: null }));
+  straws.forEach(s => { s._r = rings[s.ring]; });
+  let uid = 100000;
+  for (const ex of state.extraRings) {
+    const inner = rings.reduce((a, r) => r.rIn < a.rIn ? r : a), outer = rings.reduce((a, r) => r.rOut > a.rOut ? r : a);
+    let rIn, rOut;
+    if (ex.side === 'out') { rIn = outer.rOut; rOut = rIn * GROW; } else { rOut = inner.rIn; rIn = rOut / GROW; if (rIn < 0.25) continue; }
+    const ring = { k: -1, count: ref.length, rIn, rOut, offset: -ex.delta, extraId: ex.id };
+    rings.push(ring);
+    for (const t of ref) {
+      const th = t.th + ex.delta * DEG;
+      straws.push({ id: uid, uid: uid++, pts: [[rIn * Math.cos(th), rIn * Math.sin(th)], [rOut * Math.cos(th), rOut * Math.sin(th)]], w: t.w, color: t.color, group: 'x' + ex.id, closed: false, _r: ring });
+    }
+  }
+  rings.sort((a, b) => a.rIn - b.rIn); rings.forEach((r, i) => { r.k = i; });
+  straws.forEach(s => { s.ring = s._r.k; delete s._r; });
+  return { straws, rings, period: base.period };
+}
+function addRing(side) {
+  if (prep.rings.length >= MAX_RINGS) { toast(`링은 최대 ${MAX_RINGS}개까지 만들 수 있어요`); return; }
+  if (side === 'in' && prep.rings[0].rIn / GROW < 0.25) { toast('안쪽 공간이 부족해요 — Inner Radius를 키우거나 바깥에 추가해 주세요'); return; }
+  const id = state.extraRings.reduce((m, e) => Math.max(m, e.id), 0) + 1;
+  const sg = hash(id, 21, state.seed) < 0.5 ? -1 : 1, delta = sg * (3 + 3 * Math.floor(hash(id, 22, state.seed) * 8));
+  const order = getOrder(), n = prep.rings.length;
+  state.extraRings.push({ id, side, delta });
+  if (side === 'in') {
+    RING_ARRAYS.forEach(k => { state[k].unshift(0); state[k].length = 10; });
+    if (state.order === 'custom') state.ringOrder = [0, ...order.map(k => k + 1)];
+  } else if (state.order === 'custom') state.ringOrder = [...order, n];
+  prep = buildPrep(); buildRingUI(); rebuild(); reframe();
+  const k = side === 'in' ? 0 : prep.rings.length - 1;
+  toast(`RING ${k + 1} · ${ringLabel(k)} 추가 — 어긋난 상태로 생겨요. ALIGN TO FIT이나 드래그로 맞춰 보세요`);
+}
+function removeRing(k) {
+  const r = prep.rings[k]; if (!r || r.extraId == null) return;
+  const order = getOrder();
+  state.extraRings = state.extraRings.filter(e => e.id !== r.extraId);
+  RING_ARRAYS.forEach(key => { state[key].splice(k, 1); state[key].push(0); });
+  if (state.order === 'custom') state.ringOrder = order.filter(i => i !== k).map(i => i > k ? i - 1 : i);
+  if (hoverK === k) hoverK = -1;
+  prep = buildPrep(); buildRingUI(); rebuild(); reframe();
+}
+function reframe() { const s = camSph(); const { c, d } = fitDist(state.fov, s.elev, s.az, 0.84); flyTo(camPos(c, d, s.elev, s.az), c, state.fov, 900); }
+
+/* ======================= build ======================= */
+const tmpC = new THREE.Color(), tmpC2 = new THREE.Color(), WHITE = new THREE.Color(1, 1, 1);
+function strawColor(s, P) {
+  if (state.accent && s.w >= 0.6) return tmpC.set(state.accentColor);
+  switch (state.colorMode) {
+    case 'ring': return tmpC.set(P[s.ring % P.length]);
+    case 'weight': return tmpC.set(s.w >= 0.6 ? P[0] : P[1 % P.length]);
+    case 'random': return tmpC.set(P[Math.floor(hash(s.uid, 3, state.seed) * P.length)]);
+    case 'gradient': {
+      if (P.length < 2) return tmpC.set(P[0]);
+      const a = s.pts[0], b = s.pts[s.pts.length - 1];
+      const r = Math.hypot((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      const t = clamp((r - src.rMin) / (10 - src.rMin), 0, 1) * (P.length - 1);
+      const i = Math.min(P.length - 2, Math.floor(t));
+      return tmpC.set(P[i]).lerp(tmpC2.set(P[i + 1]), t - i);
+    }
+    default: return tmpC.set(P[0]);
+  }
+}
+function strawMat(s) {
+  if (state.matMode === 'ring') return MATS[(MATS.indexOf(state.material) + s.ring) % MATS.length];
+  if (state.matMode === 'random') return MATS[Math.floor(hash(s.uid, 8, state.seed) * MATS.length)];
+  return state.material;
+}
+function ringHelper(rmin, rmax) {
+  const g = new THREE.Group(); g.userData.helper = true; g.visible = false; g.renderOrder = 999;
+  for (const r of [rmin, rmax]) {
+    const pts = []; for (let i = 0; i < 160; i++) { const a = i / 160 * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)); }
+    const l = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), HELPER_MAT); l.renderOrder = 999; g.add(l);
+  }
+  const tick = []; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; tick.push(new THREE.Vector3(Math.cos(a) * (rmax + 0.05), 0, Math.sin(a) * (rmax + 0.05)), new THREE.Vector3(Math.cos(a) * (rmax + 0.3), 0, Math.sin(a) * (rmax + 0.3))); }
+  const t = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(tick), HELPER_MAT); t.renderOrder = 999; g.add(t);
+  return g;
+}
+function rebuild() {
+  if (!prep) return;
+  for (const g of ringGroups) { g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); root.remove(g); }
+  ringGroups = []; endCands = []; strawRecs = [];
+  const nR = prep.rings.length, buckets = new Map();
+  ringExtent = Array.from({ length: nR }, () => ({ min: Infinity, max: 0 }));
+  const P = state.palette.length ? state.palette : ['#9FB1B1'];
+  for (const s of prep.straws) {
+    const pts = strawPath(s, src, state);
+    let Ro = state.outerD / 2;
+    if (state.linkW) Ro *= lerp(1, s.w, state.linkK);
+    Ro *= Math.max(0.25, 1 + state.dVar * (hash(s.uid, 4, state.seed) * 2 - 1) * 0.7);
+    const Ri = Ro * state.innerPct / 100;
+    const mk = strawMat(s), key = s.ring + '|' + mk;
+    if (!buckets.has(key)) buckets.set(key, newBuf());
+    const col = strawColor(s, P);
+    if (mk === 'glass' || mk === 'frost') col.lerp(WHITE, 0.28);
+    const fr = pushStraw(buckets.get(key), pts, Ro, Ri, state.radial, state.half, col, s.closed);
+    if (fr) strawRecs.push({ ring: s.ring, pts, Ro, Ri, mat: mk, color: '#' + col.getHexString(), T: fr.T, N: fr.N, closed: s.closed });
+    const ex = ringExtent[s.ring];
+    for (const p of pts) { const r = Math.hypot(p.x, p.z); ex.min = Math.min(ex.min, r); ex.max = Math.max(ex.max, r); }
+    if (fr && !s.closed) {
+      const n = pts.length, r0 = Math.hypot(pts[0].x, pts[0].z), r1 = Math.hypot(pts[n - 1].x, pts[n - 1].z), outer = r1 >= r0;
+      endCands.push({ ring: s.ring, major: s.w >= 0.6, Ro, p: (outer ? pts[n - 1] : pts[0]).clone(), t: outer ? fr.T[n - 1].clone() : fr.T[0].clone().negate() });
+    }
+  }
+  for (let k = 0; k < nR; k++) {
+    const g = new THREE.Group(); g.name = `RING ${k + 1}`; root.add(g); ringGroups.push(g);
+    g.add(ringHelper(Math.max(0, ringExtent[k].min - 0.06), ringExtent[k].max + 0.06));
+  }
+  for (const [key, buf] of buckets) {
+    const [k, mk] = key.split('|');
+    const mesh = new THREE.Mesh(bufToGeometry(buf), materials[mk]);
+    mesh.name = `ring${+k + 1}_${mk}`; mesh.castShadow = true; mesh.receiveShadow = true;
+    ringGroups[+k].add(mesh);
+  }
+  setHover(hoverK, true);
+  applyLayout();
+  updateLights();
+}
+let buildQueued = false;
+function scheduleBuild() { if (buildQueued) return; buildQueued = true; requestAnimationFrame(() => { buildQueued = false; rebuild(); }); }
+
+/* ======================= layout ======================= */
+function ringRot(k) {
+  const r = prep.rings[k], sc = state.scatter * (hash(k, 11, state.seed) * 2 - 1);
+  return state.align * r.offset + (1 - state.align) * sc + (state.ringManual[k] || 0);
+}
+const periodWrap = e => { const P = prep.period; return ((e % P) + P * 1.5) % P - P / 2; };
+const ringErr = k => periodWrap(ringRot(k) - prep.rings[k].offset);
+function getOrder() {
+  const n = prep.rings.length, base = [...Array(n).keys()];
+  if (state.order === 'large') return base.reverse();
+  if (state.order === 'zigzag') { const o = []; let a = 0, b = n - 1; while (a <= b) { o.push(a++); if (a <= b) o.push(b--); } return o; }
+  if (state.order === 'custom' && state.ringOrder.length === n && base.every(k => state.ringOrder.includes(k))) return [...state.ringOrder];
+  return base;
+}
+function applyLayout() {
+  if (!prep) return;
+  const nR = prep.rings.length, order = getOrder();
+  ringGroups.forEach((g, k) => {
+    const level = (nR - 1) / 2 - order.indexOf(k);
+    g.rotation.set((state.explode * state.tilt * (k % 2 ? 1 : -1) + (state.ringTilt[k] || 0)) * DEG, -ringRot(k) * DEG, 0, 'XYZ');
+    g.position.y = state.explode * state.gap * level + (state.ringY[k] || 0);
+  });
+  root.rotation.y = -state.rotation * DEG;
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  ringGroups.forEach(g => g.children.forEach(m => { if (m.isMesh) box.expandByObject(m); }));
+  ground.position.y = box.isEmpty() ? 0 : box.min.y - 0.01;
+  updateHUD(); updateRingStatus();
+}
+
+/* ======================= HUD ======================= */
+const hud = $('#hud');
+function fitPercent() {
+  if (!prep || prep.rings.length < 2) return 100;
+  const e = prep.rings.map((r, k) => Math.abs(ringErr(k)));
+  return 100 * (1 - Math.min(1, e.reduce((a, b) => a + b, 0) / e.length / (prep.period / 2)));
+}
+function ringLabel(k) {
+  const r = prep.rings[k], rr = remapRadius(r.rOut, src, state);
+  return src.mmPerUnit ? 'Ø' + Math.round(2 * rr * src.mmPerUnit) : 'R' + (rr / 10).toFixed(2);
+}
+function updateHUD() {
+  if (!prep) return;
+  const fit = fitPercent(), ok = fit >= 99.5;
+  let h = `<div class="t"><span>ØWN · ALIGN TO FIT</span><span class="${ok ? 'ok' : ''}">${ok ? 'FITTED ✓' : 'FITTING…'}</span></div>`;
+  h += `<div class="t" style="margin-bottom:4px"><span>FIT</span><span>${fit.toFixed(1)}%</span></div><div class="bar"><i style="width:${fit}%"></i></div>`;
+  for (let k = prep.rings.length - 1; k >= 0; k--) {
+    const e = ringErr(k), x = 50 + clamp(e / (prep.period / 2), -1, 1) * 50;
+    h += `<div class="rr${k === hoverK ? ' hov' : ''}"><span>${ringLabel(k)}</span><span class="g"><b style="left:${x}%"></b></span><span>${e >= 0 ? '+' : ''}${e.toFixed(1)}°</span></div>`;
+  }
+  hud.innerHTML = h;
+}
+
+/* ======================= camera ======================= */
+function camSph() {
+  const v = camera.position.clone().sub(controls.target), r = v.length();
+  return { r, elev: Math.asin(clamp(v.y / r, -1, 1)) / DEG, az: Math.atan2(v.x, v.z) / DEG };
+}
+function camPos(t, r, elev, az) {
+  const e = elev * DEG, a = az * DEG;
+  return new THREE.Vector3(t.x + r * Math.cos(e) * Math.sin(a), t.y + r * Math.sin(e), t.z + r * Math.cos(e) * Math.cos(a));
+}
+function fitDist(fov, elev = 32, az = 0, margin = 0.84) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3(); ringGroups.forEach(g => g.children.forEach(m => { if (m.isMesh) box.expandByObject(m); }));
+  const c = box.getCenter(new THREE.Vector3()), dir = camPos(new THREE.Vector3(), 1, elev, az);
+  let right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir);
+  if (right.lengthSq() < 1e-8) right.set(1, 0, 0); right.normalize();
+  const up = new THREE.Vector3().crossVectors(dir, right).normalize();
+  const tv = Math.tan((fov || camera.fov) * DEG / 2) * margin, th = tv * camera.aspect;
+  let d = 0; const k = new THREE.Vector3();
+  for (let i = 0; i < 8; i++) {
+    k.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(c);
+    const z = k.dot(dir); d = Math.max(d, z + Math.abs(k.dot(up)) / tv, z + Math.abs(k.dot(right)) / th);
+  }
+  return { c, d };
+}
+let tween = null;
+function flyTo(pos, target, fov, dur = 1100) {
+  if (!dur) { camera.position.copy(pos); controls.target.copy(target); if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); } syncElev(); return; }
+  tween = { t0: performance.now(), dur, p0: camera.position.clone(), p1: pos, q0: controls.target.clone(), q1: target, f0: camera.fov, f1: fov || camera.fov };
+}
+const VIEWS = { top: { e: 89.5, az: 0, m: 1 }, iso: { e: 32, az: 32, m: 1 }, low: { e: 8, az: 18, m: 0.74 }, side: { e: 0.4, az: 0, m: 1 } };
+function setView(name, dur = 1100) {
+  if (name === 'end') return endView();
+  const V = VIEWS[name]; const fov = state.fov; const { c, d } = fitDist(fov, V.e, V.az, name === 'low' ? 1.02 : 0.84);
+  flyTo(camPos(c, d * V.m, V.e, V.az), c, fov, dur);
+}
+function endView() {
+  if (!endCands.length) return;
+  root.updateMatrixWorld(true);
+  const camDir = camera.position.clone().sub(controls.target).normalize(), outer = prep.rings.length - 1;
+  let best = null, bs = -Infinity;
+  for (const c of endCands) {
+    const g = ringGroups[c.ring]; if (!g) continue;
+    const P = c.p.clone().applyMatrix4(g.matrixWorld), T = c.t.clone().transformDirection(g.matrixWorld);
+    const sc = T.dot(camDir) + (c.major ? 0.4 : 0) + (c.ring === outer ? 0.3 : 0);
+    if (sc > bs) { bs = sc; best = { P, T, Ro: c.Ro }; }
+  }
+  const { P, T, Ro } = best;
+  const side = new THREE.Vector3().crossVectors(T, new THREE.Vector3(0, 1, 0)).normalize();
+  const pos = P.clone().addScaledVector(T, Ro * 13).addScaledVector(side, Ro * 3.2).add(new THREE.Vector3(0, Ro * 4, 0));
+  state.autoRotate = false; controls.autoRotate = false; $('#autoRotate').checked = false;
+  flyTo(pos, P.clone().addScaledVector(T, -Ro * 2), 32, 1500);
+  toast('빨대 끝단: 바깥 벽 · 안쪽 벽 · 고리형 단면이 실제 3D 구조로 보여요');
+}
+let syncingElev = false;
+function syncElev() { const s = camSph(); state.elev = Math.round(s.elev * 10) / 10; syncInputs(['elev']); }
+controls.addEventListener('start', () => { tween = null; });
+controls.addEventListener('change', () => { if (!syncingElev) syncElev(); });
+
+/* ======================= lights / scene ======================= */
+function updateLights() {
+  const sph = new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
+  const R = Math.max(4, sph.radius * 1.15), a = state.lightAz * DEG, e = state.lightEl * DEG;
+  keyL.position.set(sph.center.x + Math.sin(a) * Math.cos(e) * 40, sph.center.y + Math.sin(e) * 40, sph.center.z + Math.cos(a) * Math.cos(e) * 40);
+  keyL.target.position.copy(sph.center);
+  keyL.intensity = state.lightI;
+  const sc = keyL.shadow.camera; sc.left = -R; sc.right = R; sc.top = R; sc.bottom = -R; sc.near = 1; sc.far = 90; sc.updateProjectionMatrix();
+}
+const isDark = () => state.bg !== 'white';
+function updateScene() {
+  scene.background = new THREE.Color(BG[state.bg]);
+  view.style.background = BG[state.bg];
+  view.classList.toggle('dark', isDark());
+  ground.visible = state.shadow; keyL.castShadow = state.shadow;
+  ground.material.opacity = state.bg === 'white' ? 0.13 : state.bg === 'charcoal' ? 0.3 : 0.5;
+  Object.values(materials).forEach(m => { m.envMapIntensity = state.envI; });
+  controls.autoRotate = state.autoRotate; controls.autoRotateSpeed = 0.8;
+  $('#brandLabel').style.display = state.label ? '' : 'none';
+  document.querySelectorAll('[data-bg]').forEach(b => b.classList.toggle('on', b.dataset.bg === state.bg));
+}
+
+/* ======================= animation ======================= */
+const GEOM_KEYS = ['heightVar', 'lVar', 'dVar', 'length', 'curvature', 'innerR', 'spread'];
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+let play = null, playKind = null;
+function alignTarget() {
+  const n = prep.rings.length;
+  const snap = (m, k) => k < n ? m - periodWrap(m) : 0;
+  return {
+    align: 1, explode: 0,
+    ringManual: state.ringManual.map(snap), ringY: state.ringY.map(() => 0), ringTilt: state.ringTilt.map(() => 0),
+    heightVar: 0, lVar: 0, dVar: 0, length: 1, curvature: 0, innerR: ORIG_INNER, spread: 1
+  };
+}
+const disTarget = () => ({ align: 0, explode: 1 });
+function animateTo(kind, dur = 2600) {
+  const target = kind === 'align' ? alignTarget() : disTarget();
+  const from = {}; for (const k in target) from[k] = structuredClone(state[k]);
+  const geom = GEOM_KEYS.some(k => k in target && Math.abs(target[k] - state[k]) > 1e-6);
+  play = { from, target, t0: performance.now(), dur, geom, assembling: kind === 'align' }; playKind = kind;
+}
+function stepPlay(now) {
+  const t = clamp((now - play.t0) / play.dur, 0, 1);
+  const tf = ease(clamp(t * 1.35, 0, 1)), tl = ease(clamp(t * 1.35 - 0.35, 0, 1));
+  for (const k in play.target) {
+    const late = play.assembling ? k === 'explode' : k !== 'explode';
+    const e = late ? tl : tf, a = play.from[k], b = play.target[k];
+    state[k] = Array.isArray(a) ? a.map((v, i) => lerp(v, b[i], e)) : lerp(a, b, e);
+  }
+  if (play.geom) rebuild(); else applyLayout();
+  syncInputs(Object.keys(play.target)); syncRingInputs();
+  if (t >= 1) {
+    if (state.loop) { const next = playKind === 'align' ? 'dis' : 'align'; animateTo(next); play.t0 = now + 1000; }
+    else { play = null; if (playKind === 'align') toast('ALIGN TO FIT — 모든 링의 눈금이 기준선에 맞춰졌어요'); }
+  }
+}
+
+/* ======================= ring picking & drag ======================= */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let hoverK = -1, drag = null;
+function setNDC(ev) { const r = canvas.getBoundingClientRect(); ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); raycaster.setFromCamera(ndc, camera); }
+function frameNoSpin(k) { // ring frame without its own Y rotation (position + tilt only)
+  const g = ringGroups[k];
+  const m = new THREE.Matrix4().compose(g.position, new THREE.Quaternion().setFromEuler(new THREE.Euler(g.rotation.x, 0, 0)), new THREE.Vector3(1, 1, 1));
+  return new THREE.Matrix4().multiplyMatrices(root.matrixWorld, m);
+}
+function planeHit(M) {
+  const inv = M.clone().invert(), ray = raycaster.ray.clone().applyMatrix4(inv);
+  if (Math.abs(ray.direction.y) < 1e-5) return null;
+  const t = -ray.origin.y / ray.direction.y; if (t < 0) return null;
+  return ray.origin.clone().addScaledVector(ray.direction, t);
+}
+function pickRing() {
+  let best = null; const pad = Math.max(0.12, state.outerD * 1.2);
+  ringGroups.forEach((g, k) => {
+    const ex = ringExtent[k]; if (!ex) return;
+    const p = planeHit(frameNoSpin(k)); if (!p) return;
+    const r = Math.hypot(p.x, p.z); if (r < ex.min - pad || r > ex.max + pad) return;
+    const d = p.clone().applyMatrix4(frameNoSpin(k)).distanceTo(camera.position);
+    if (!best || d < best.d) best = { k, d };
+  });
+  return best ? best.k : -1;
+}
+function setHover(k, force) {
+  if (k === hoverK && !force) return;
+  hoverK = k;
+  ringGroups.forEach((g, i) => g.children.forEach(c => { if (c.userData.helper) c.visible = i === k; }));
+  document.querySelectorAll('#ringRows .ring').forEach(el => el.classList.toggle('hov', +el.dataset.k === k));
+  canvas.style.cursor = k >= 0 ? (drag ? 'grabbing' : 'grab') : '';
+  updateHUD();
+}
+canvas.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0 || !prep || !state.grab || ev.altKey || ev.ctrlKey || ev.metaKey) return;
+  setNDC(ev); const k = pickRing(); if (k < 0) return;
+  controls.enabled = false; play = null;
+  const M = frameNoSpin(k), p = planeHit(M);
+  drag = { k, M, a: p ? Math.atan2(p.z, p.x) : 0, y: ev.clientY, mode: ev.shiftKey ? 'height' : 'rotate', moved: false };
+  canvas.setPointerCapture(ev.pointerId); setHover(k, true);
+}, { capture: true });
+canvas.addEventListener('pointermove', ev => {
+  setNDC(ev);
+  if (!drag) { if (!ev.buttons) setHover(state.grab ? pickRing() : -1); return; }
+  drag.moved = true;
+  if (drag.mode === 'rotate') {
+    const p = planeHit(drag.M); if (!p) return;
+    const a = Math.atan2(p.z, p.x), da = wrapPI(a - drag.a); drag.a = a;
+    state.ringManual[drag.k] += da / DEG;
+  } else {
+    const per = 2 * camera.position.distanceTo(controls.target) * Math.tan(camera.fov * DEG / 2) / canvas.clientHeight;
+    state.ringY[drag.k] = clamp(state.ringY[drag.k] - (ev.clientY - drag.y) * per, -12, 12); drag.y = ev.clientY;
+  }
+  applyLayout(); syncRingInputs();
+});
+function endDrag(ev) {
+  if (!drag) return;
+  const k = drag.k;
+  if (drag.mode === 'rotate' && drag.moved) {
+    const e = ringErr(k);
+    if (Math.abs(e) < 1.5 && Math.abs(e) > 1e-4) { state.ringManual[k] -= e; applyLayout(); syncRingInputs(); }
+    if (Math.abs(ringErr(k)) < 1e-3 && prep.rings.length > 1) toast(`RING ${k + 1} · ${ringLabel(k)} — FIT ✓ 기준선에 맞춰졌어요`);
+  }
+  drag = null; controls.enabled = true;
+  try { canvas.releasePointerCapture(ev.pointerId); } catch (e) { }
+  setHover(k, true);
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerleave', () => { if (!drag) setHover(-1); });
+
+/* ======================= UI ======================= */
+const ctl = {};
+const SLIDERS = {
+  secAlign: [
+    { k: 'align', label: '정렬 Align', min: 0, max: 1, step: 0.005, kind: 'layout', scale: 100, unit: '%', dec: 1 },
+    { k: 'scatter', label: '추가 흐트러짐 Misalign', min: 0, max: 45, step: 0.5, kind: 'layout', unit: '°', dec: 1 },
+    { k: 'explode', label: '분해 Explode', min: 0, max: 1, step: 0.005, kind: 'layout', scale: 100, unit: '%', dec: 1 },
+  ],
+  secAlign2: [
+    { k: 'gap', label: '분해 간격', min: 0.2, max: 6, step: 0.05, kind: 'layout', dec: 2 },
+    { k: 'tilt', label: '분해 시 기울기', min: 0, max: 60, step: 0.5, kind: 'layout', unit: '°', dec: 1 },
+  ],
+  secStraw: [
+    { k: 'outerD', label: 'Outer Diameter 외경', min: 0.03, max: 1.2, step: 0.005, kind: 'build', dec: 3 },
+    { k: 'innerPct', label: 'Inner Diameter 내경', small: '외경 대비', min: 10, max: 96, step: 1, kind: 'build', unit: '%', dec: 0 },
+    { k: 'length', label: 'Tube Length 길이', min: 0.2, max: 1.8, step: 0.01, kind: 'build', unit: '×', dec: 2 },
+    { k: 'curvature', label: 'Curvature 곡률', min: -1.5, max: 1.5, step: 0.01, kind: 'build', dec: 2 },
+    { k: 'dVar', label: 'Diameter Variation 굵기 차이', min: 0, max: 1, step: 0.01, kind: 'build', scale: 100, unit: '%', dec: 0 },
+    { k: 'lVar', label: 'Length Variation 길이 차이', min: 0, max: 1, step: 0.01, kind: 'build', scale: 100, unit: '%', dec: 0 },
+  ],
+  secStraw2: [
+    { k: 'linkK', label: '굵기 반영 강도', min: 0, max: 1, step: 0.01, kind: 'build', scale: 100, unit: '%', dec: 0 },
+    { k: 'radial', label: '원통 매끄러움 (단면 분할)', min: 8, max: 64, step: 1, kind: 'build', dec: 0 },
+  ],
+  secRadial: [
+    { k: 'innerR', label: 'Inner Radius 중앙 빈 공간', min: 0, max: 0.8, step: 0.005, kind: 'build', scale: 100, unit: '%', dec: 1 },
+    { k: 'spread', label: 'Radial Spread 펼침', min: 0.4, max: 1.8, step: 0.01, kind: 'build', unit: '×', dec: 2 },
+    { k: 'heightVar', label: 'Height Variation 높낮이', min: 0, max: 2, step: 0.01, kind: 'build', dec: 2 },
+    { k: 'rotation', label: 'Rotation 회전', min: -180, max: 180, step: 0.5, kind: 'layout', unit: '°', dec: 1 },
+  ],
+  secCam: [
+    { k: 'elev', label: 'Camera Angle 시점', small: '90 위 → 0 수평', min: 0.3, max: 89.7, step: 0.1, kind: 'cam', unit: '°', dec: 1 },
+    { k: 'fov', label: '원근감 (화각)', min: 10, max: 70, step: 1, kind: 'fov', unit: '°', dec: 0 },
+  ],
+  secLight: [
+    { k: 'lightAz', label: 'Light Direction 조명 방향', min: -180, max: 180, step: 1, kind: 'light', unit: '°', dec: 0 },
+    { k: 'lightEl', label: '조명 높이', min: 5, max: 90, step: 1, kind: 'light', unit: '°', dec: 0 },
+    { k: 'lightI', label: 'Light Intensity 조명 강도', min: 0, max: 5, step: 0.05, kind: 'light', dec: 2 },
+    { k: 'envI', label: '반사 · 환경광', min: 0, max: 2.5, step: 0.05, kind: 'scene', dec: 2 },
+  ],
+};
+/** slider + typed number input bound to a getter/setter */
+function makeControl(d, get, set) {
+  const sc = d.scale || 1, row = document.createElement('div'); row.className = 'row';
+  row.innerHTML = `<label><span class="l">${d.label}${d.small ? ` <small>${d.small}</small>` : ''}</span><span class="nv"><input type="number" class="num" step="any"><i>${d.unit || ''}</i></span></label><input type="range" min="${d.min}" max="${d.max}" step="${d.step}">`;
+  const range = row.querySelector('input[type=range]'), num = row.querySelector('input.num');
+  const show = v => { range.value = v; if (document.activeElement !== num) num.value = (+(v * sc).toFixed(d.dec ?? 2)); };
+  range.addEventListener('input', () => { const v = parseFloat(range.value); set(v); num.value = (+(v * sc).toFixed(d.dec ?? 2)); });
+  const commit = () => {
+    let v = parseFloat(num.value); if (!isFinite(v)) { show(get()); return; }
+    v = clamp(v / sc, d.min, d.max); set(v); range.value = v; num.value = (+(v * sc).toFixed(d.dec ?? 2));
+  };
+  num.addEventListener('change', commit);
+  num.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { commit(); num.blur(); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault(); const st = d.step * (e.shiftKey ? 10 : 1) * (e.key === 'ArrowUp' ? 1 : -1);
+      const v = clamp(get() + st, d.min, d.max); set(v); show(v); num.value = (+(v * sc).toFixed(d.dec ?? 2));
+    }
+  });
+  return { row, show };
+}
+function addSlider(container, d) {
+  const c = makeControl(d, () => state[d.k], v => { state[d.k] = v; onChange(d.kind, d.k); });
+  container.appendChild(c.row); ctl[d.k] = { ...c, d };
+}
+Object.entries(SLIDERS).forEach(([id, list]) => list.forEach(d => addSlider($('#' + id), d)));
+
+function onChange(kind, k) {
+  if (k === 'align' || k === 'explode') play = null;
+  switch (kind) {
+    case 'layout': applyLayout(); break;
+    case 'build': scheduleBuild(); break;
+    case 'scene': updateScene(); break;
+    case 'light': updateLights(); break;
+    case 'cam': { syncingElev = true; tween = null; const s = camSph(); camera.position.copy(camPos(controls.target, s.r, state.elev, s.az)); controls.update(); syncingElev = false; break; }
+    case 'fov': { tween = null; const s = camSph(); const f = Math.tan(camera.fov * DEG / 2) / Math.tan(state.fov * DEG / 2); camera.fov = state.fov; camera.updateProjectionMatrix(); camera.position.copy(camPos(controls.target, s.r * f, s.elev, s.az)); break; }
+  }
+}
+function syncInputs(keys) { for (const k of keys) { const c = ctl[k]; if (c) c.show(state[k]); } }
+
+const CHECKS = { grab: 'grab', linkW: 'build', half: 'build', accent: 'build', shadow: 'scene', autoRotate: 'scene', label: 'scene', loop: 'loop' };
+const CHECK_IDS = { loop: 'loopChk' };
+Object.entries(CHECKS).forEach(([k, kind]) => {
+  const el = $('#' + (CHECK_IDS[k] || k));
+  el.addEventListener('change', () => {
+    state[k] = el.checked;
+    if (kind === 'loop') { if (state.loop && !play) animateTo(fitPercent() > 99 && state.explode < 0.01 ? 'dis' : 'align'); if (!state.loop) play = null; }
+    else if (kind === 'grab') { if (!state.grab) setHover(-1); toast(state.grab ? '링 잡기 ON — 링 위에서 드래그하면 그 링만 회전해요' : '링 잡기 OFF — 드래그하면 시점이 회전해요'); }
+    else onChange(kind, k);
+    if (k === 'linkW') ctl.linkK.row.style.opacity = state.linkW ? '' : '.4';
+  });
+});
+const SELECTS = { curveDir: 'build', colorMode: 'build', matMode: 'build', res: 'none', order: 'layout' };
+Object.entries(SELECTS).forEach(([k, kind]) => {
+  const el = $('#' + k);
+  el.addEventListener('change', () => { state[k] = k === 'res' ? +el.value : el.value; if (k === 'order' && el.value === 'custom' && !state.ringOrder.length) state.ringOrder = getOrder(); onChange(kind, k); buildRingUI(); });
+});
+$('#accentColor').addEventListener('input', e => { state.accentColor = e.target.value; if (state.accent) scheduleBuild(); });
+
+/* ring fitting cards */
+let ringCtl = [];
+const RING_FIELDS = [
+  { key: 'ringManual', label: '회전', min: -180, max: 180, step: 0.5, unit: '°', dec: 1 },
+  { key: 'ringY', label: '높이', min: -12, max: 12, step: 0.05, dec: 2 },
+  { key: 'ringTilt', label: '기울기', min: -90, max: 90, step: 0.5, unit: '°', dec: 1 },
+];
+function buildRingUI() {
+  const box = $('#ringRows'); box.innerHTML = ''; ringCtl = [];
+  if (!prep) return;
+  const n = prep.rings.length, order = getOrder();
+  for (let k = n - 1; k >= 0; k--) {
+    const card = document.createElement('div'); card.className = 'ring'; card.dataset.k = k;
+    const pos = order.indexOf(k);
+    const extra = prep.rings[k].extraId != null;
+    card.innerHTML = `<div class="hd"><b>RING ${k + 1} · ${ringLabel(k)}</b>${extra ? '<span class="tag">추가</span>' : ''}<span class="st" data-st></span><button data-mv="-1" title="분해 시 한 층 위로">▲</button><button data-mv="1" title="분해 시 한 층 아래로">▼</button>${extra ? '<button data-del title="이 링 지우기">✕</button>' : ''}</div><div class="mono" style="color:var(--mute);font-size:10.5px;margin-top:2px">분해 층 ${pos + 1} / ${n}</div>`;
+    card.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => {
+      const o = getOrder(), i = o.indexOf(k), j = i + +b.dataset.mv; if (j < 0 || j >= n) return;
+      [o[i], o[j]] = [o[j], o[i]]; state.ringOrder = o; state.order = 'custom'; $('#order').value = 'custom';
+      if (state.explode < 0.05) toast('분해 Explode 값을 올리면 바뀐 층 순서가 보여요');
+      applyLayout(); buildRingUI();
+    }));
+    const del = card.querySelector('[data-del]'); if (del) del.addEventListener('click', () => removeRing(k));
+    card.addEventListener('mouseenter', () => { if (!drag) setHover(k); });
+    card.addEventListener('mouseleave', () => { if (!drag) setHover(-1); });
+    const shows = [];
+    for (const f of RING_FIELDS) {
+      const c = makeControl({ ...f, label: f.label }, () => state[f.key][k], v => { state[f.key][k] = v; play = null; applyLayout(); });
+      card.appendChild(c.row); shows.push(() => c.show(state[f.key][k]));
+    }
+    box.appendChild(card); ringCtl[k] = { card, shows };
+  }
+  syncRingInputs(); updateRingStatus();
+}
+function syncRingInputs() { ringCtl.forEach(r => r && r.shows.forEach(f => f())); }
+function updateRingStatus() {
+  ringCtl.forEach((r, k) => {
+    if (!r) return; const e = ringErr(k), el = r.card.querySelector('[data-st]');
+    const ok = Math.abs(e) < 0.05; el.textContent = ok ? 'FIT ✓' : `${e >= 0 ? '+' : ''}${e.toFixed(1)}°`; el.classList.toggle('ok', ok);
+  });
+}
+
+/* palette & material */
+function renderSwatches() {
+  const box = $('#swatches'); box.innerHTML = '';
+  const all = [...PALETTE, ...state.palette.filter(c => !PALETTE.includes(c.toUpperCase()))];
+  for (const c of all) {
+    const b = document.createElement('button'); b.className = 'sw'; b.style.background = c; b.title = c;
+    const i = state.palette.findIndex(p => p.toUpperCase() === c.toUpperCase());
+    if (i >= 0) { b.classList.add('sel'); const L = new THREE.Color(c).getHSL({}).l; b.innerHTML = `<i style="color:${L > 0.55 ? '#20292C' : '#fff'}">${i + 1}</i>`; }
+    b.addEventListener('click', () => {
+      const j = state.palette.findIndex(p => p.toUpperCase() === c.toUpperCase());
+      if (j >= 0) state.palette.splice(j, 1); else state.palette.push(c);
+      renderSwatches(); scheduleBuild();
+    });
+    box.appendChild(b);
+  }
+  document.querySelectorAll('#palPresets button').forEach(b => b.classList.toggle('on', JSON.stringify(PAL_PRESETS[b.dataset.p]) === JSON.stringify(state.palette)));
+}
+Object.keys(PAL_PRESETS).forEach(name => {
+  const b = document.createElement('button'); b.textContent = name; b.dataset.p = name; b.className = 'mono';
+  b.addEventListener('click', () => { state.palette = [...PAL_PRESETS[name]]; renderSwatches(); scheduleBuild(); });
+  $('#palPresets').appendChild(b);
+});
+$('#addColor').addEventListener('click', () => { const c = $('#customColor').value.toUpperCase(); if (!state.palette.includes(c)) state.palette.push(c); renderSwatches(); scheduleBuild(); });
+$('#clearPal').addEventListener('click', () => { state.palette = []; renderSwatches(); scheduleBuild(); });
+MATS.forEach(m => {
+  const b = document.createElement('button'); b.textContent = MAT_LABEL[m]; b.dataset.m = m; b.className = 'grow';
+  b.addEventListener('click', () => { state.material = m; refreshMatBtns(); scheduleBuild(); });
+  $('#matBtns').appendChild(b);
+});
+function refreshMatBtns() { document.querySelectorAll('#matBtns button').forEach(b => b.classList.toggle('on', b.dataset.m === state.material)); }
+document.querySelectorAll('[data-bg]').forEach(b => b.addEventListener('click', () => { state.bg = b.dataset.bg; updateScene(); }));
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#reseed').addEventListener('click', () => { state.seed = (state.seed * 7 + 13) % 9973; rebuild(); });
+$('#playAlign').addEventListener('click', () => animateTo('align'));
+$('#addOuter').addEventListener('click', () => addRing('out'));
+$('#addInner').addEventListener('click', () => addRing('in'));
+$('#playExplode').addEventListener('click', () => animateTo('dis'));
+
+function refreshInputs() {
+  Object.keys(ctl).forEach(k => syncInputs([k]));
+  Object.keys(CHECKS).forEach(k => { $('#' + (CHECK_IDS[k] || k)).checked = !!state[k]; });
+  Object.keys(SELECTS).forEach(k => { $('#' + k).value = state[k]; });
+  $('#accentColor').value = state.accentColor;
+  ctl.linkK.row.style.opacity = state.linkW ? '' : '.4';
+  renderSwatches(); refreshMatBtns(); updateScene(); buildRingUI();
+}
+
+/* ======================= toast / modal ======================= */
+let toastT = 0;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
+function modal(html) { $('#modalBody').innerHTML = html; $('#modal').classList.add('on'); }
+$('#modalClose').addEventListener('click', () => $('#modal').classList.remove('on'));
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').classList.remove('on'); });
+
+/* ======================= export ======================= */
+let downloads = null;
+(async () => {
+  for (let i = 0; i < 40 && !(window.claude && window.claude.use); i++) await new Promise(r => setTimeout(r, 150));
+  if (window.claude && window.claude.use) { try { downloads = await window.claude.use('downloads'); } catch (e) { downloads = null; } }
+})();
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; };
+async function saveFile(filename, data, kind) {
+  if (downloads) {
+    try { await downloads.save({ filename, data }); toast('저장했어요 — ' + filename); return; }
+    catch (e) {
+      if (e && e.code === 'declined') { toast('저장을 취소했어요'); return; }
+      if (e && e.code === 'rate_limited') { toast('잠시 후 다시 시도해 주세요'); return; }
+    }
+  }
+  if (!window.claude) { // standalone website: normal browser download
+    const blob = data instanceof Blob ? data : new Blob([data], { type: kind === 'svg' ? 'image/svg+xml' : kind === 'text' ? 'application/json' : 'application/zip' });
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000); toast('저장했어요 — ' + filename); return;
+  }
+  if (kind === 'image') { const url = URL.createObjectURL(data); modal(`<img src="${url}" alt=""><p>이 화면에서는 바로 저장이 안 돼요. 이미지를 우클릭(모바일은 길게 누르기)해서 저장하세요.</p>`); }
+  else if (kind === 'svg') { const url = URL.createObjectURL(new Blob([data], { type: 'image/svg+xml' })); modal(`<img src="${url}" alt=""><p>이 화면에서는 바로 저장이 안 돼요. 아티팩트를 전체 화면(새 탭)으로 열어 다시 저장해 주세요.</p>`); }
+  else if (kind === 'text') { modal(`<p>이 화면에서는 파일 저장이 안 돼요. 아래 내용을 복사해 .json 파일로 보관하세요.</p><textarea readonly>${data.replace(/</g, '&lt;')}</textarea>`); }
+  else toast('이 화면에서는 파일 저장을 쓸 수 없어요. 아티팩트를 전체 화면(새 탭)으로 열어 주세요.');
+}
+function drawLabel(g, W, H, onLight) {
+  const s = Math.min(W, H) / 900, ink = onLight ? '#20292C' : '#F2F2EE';
+  const lh = 40 * s, lw = lh * LOGO_ASPECT, img = onLight ? LOGO_IMG.dark : LOGO_IMG.light;
+  g.save();
+  if (img.complete && img.naturalWidth) g.drawImage(img, 40 * s, H - 64 * s - lh, lw, lh);
+  g.fillStyle = ink; g.textBaseline = 'alphabetic';
+  g.font = `500 ${Math.round(14 * s)}px "IBM Plex Mono", monospace`;
+  try { g.letterSpacing = `${(3 * s).toFixed(1)}px`; } catch (e) { }
+  g.fillText('MADE TO FIT YOUR SIP.', 40 * s, H - 40 * s);
+  g.textAlign = 'right'; g.fillText(`ALIGN TO FIT · FIT ${fitPercent().toFixed(0)}%`, W - 40 * s, H - 40 * s);
+  g.restore();
+}
+function grabCanvas() {
+  const c = renderer.domElement, c2 = document.createElement('canvas'); c2.width = c.width; c2.height = c.height;
+  const g = c2.getContext('2d'); g.drawImage(c, 0, 0); return { c: c2, g };
+}
+function withExportSize(maxPx, fn) {
+  const w = view.clientWidth, h = view.clientHeight, pr = renderer.getPixelRatio();
+  let res = state.res; if (w * h * res * res > maxPx) res = Math.sqrt(maxPx / (w * h));
+  renderer.setPixelRatio(res); renderer.setSize(w, h, false);
+  const helpers = []; root.traverse(o => { if (o.userData.helper && o.visible) { helpers.push(o); o.visible = false; } });
+  const bg = scene.background, gv = ground.visible;
+  controls.update(); root.updateMatrixWorld(true);
+  try { return fn(); }
+  finally {
+    scene.background = bg; ground.visible = gv; renderer.setClearColor(0x000000, 0);
+    helpers.forEach(o => { o.visible = true; });
+    renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
+  }
+}
+async function renderPNG(transparent) {
+  const c = withExportSize(40e6, () => {
+    if (transparent) { scene.background = null; renderer.setClearColor(0x000000, 0); }
+    renderer.render(scene, camera);
+    const o = grabCanvas(); if (state.label) drawLabel(o.g, o.c.width, o.c.height, transparent || !isDark()); return o.c;
+  });
+  return await new Promise(r => c.toBlob(r, 'image/png'));
+}
+/* ---------- PSD writer (layered, RLE) ---------- */
+function packRow(src, len, out, o) {
+  let i = 0;
+  while (i < len) {
+    let j = i + 1; while (j < len && j - i < 128 && src[j] === src[i]) j++;
+    const run = j - i;
+    if (run >= 3) { out[o++] = 257 - run; out[o++] = src[i]; i = j; }
+    else {
+      let k = i; while (k < len && k - i < 128) { if (k + 2 < len && src[k] === src[k + 1] && src[k] === src[k + 2]) break; k++; }
+      out[o++] = k - i - 1; for (let t = i; t < k; t++) out[o++] = src[t]; i = k;
+    }
+  }
+  return o;
+}
+function rleChannel(data, W, H, off) {
+  const out = new Uint8Array(H * (W + Math.ceil(W / 128) + 2)), counts = new Uint16Array(H), row = new Uint8Array(W);
+  let o = 0;
+  for (let y = 0; y < H; y++) { const b = y * W * 4 + off; for (let x = 0; x < W; x++) row[x] = data[b + x * 4]; const s = o; o = packRow(row, W, out, o); counts[y] = o - s; }
+  return { counts, bytes: out.subarray(0, o) };
+}
+class BW {
+  constructor() { this.c = []; this.len = 0; }
+  push(b) { this.c.push(b); this.len += b.length; }
+  num(v, n, signed) { const b = new Uint8Array(n), dv = new DataView(b.buffer); if (n === 1) dv.setUint8(0, v & 255); else if (n === 2) signed ? dv.setInt16(0, v) : dv.setUint16(0, v); else signed ? dv.setInt32(0, v) : dv.setUint32(0, v >>> 0); this.push(b); }
+  u8(v) { this.num(v, 1); } u16(v) { this.num(v, 2); } i16(v) { this.num(v, 2, true); } u32(v) { this.num(v, 4); } i32(v) { this.num(v, 4, true); }
+  str(s) { this.push(new Uint8Array([...s].map(ch => ch.charCodeAt(0) & 255))); }
+  out() { const r = new Uint8Array(this.len); let o = 0; for (const b of this.c) { r.set(b, o); o += b.length; } return r; }
+}
+function countsBytes(counts) { const b = new Uint8Array(counts.length * 2), dv = new DataView(b.buffer); counts.forEach((v, i) => dv.setUint16(i * 2, v)); return b; }
+function buildPSD(W, H, composite, layers) {
+  const w = new BW();
+  w.str('8BPS'); w.u16(1); w.push(new Uint8Array(6)); w.u16(3); w.u32(H); w.u32(W); w.u16(8); w.u16(3);
+  w.u32(0); w.u32(0);
+  const li = new BW(); li.i16(layers.length);
+  const enc = layers.map(L => {
+    const d = L.data; let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) { x0 = y0 = 0; x1 = y1 = 0; }
+    const cw = x1 - x0 + 1, ch = y1 - y0 + 1, crop = new Uint8ClampedArray(cw * ch * 4);
+    for (let y = 0; y < ch; y++) crop.set(d.subarray(((y + y0) * W + x0) * 4, ((y + y0) * W + x0 + cw) * 4), y * cw * 4);
+    const chans = [[-1, 3], [0, 0], [1, 1], [2, 2]].map(([id, off]) => { const r = rleChannel(crop, cw, ch, off); return { id, ...r, len: 2 + ch * 2 + r.bytes.length }; });
+    return { L, x0, y0, x1, y1, ch, chans };
+  });
+  for (const e of enc) {
+    li.i32(e.y0); li.i32(e.x0); li.i32(e.y1 + 1); li.i32(e.x1 + 1); li.u16(4);
+    for (const c of e.chans) { li.i16(c.id); li.u32(c.len); }
+    li.str('8BIM'); li.str('norm'); li.u8(255); li.u8(0); li.u8(e.L.hidden ? 2 : 0); li.u8(0);
+    const ascii = e.L.name.replace(/[^\x20-\x7e]/g, '').slice(0, 250);
+    const plen = Math.ceil((ascii.length + 1) / 4) * 4;
+    const uni = new BW(); uni.u32(e.L.name.length); for (const ch of e.L.name) uni.u16(ch.charCodeAt(0)); if (uni.len % 4) uni.u16(0);
+    li.u32(4 + 4 + plen + 12 + uni.len); li.u32(0); li.u32(0);
+    const pn = new Uint8Array(plen); pn[0] = ascii.length; for (let i = 0; i < ascii.length; i++) pn[i + 1] = ascii.charCodeAt(i); li.push(pn);
+    li.str('8BIM'); li.str('luni'); li.u32(uni.len); li.push(uni.out());
+  }
+  for (const e of enc) for (const c of e.chans) { li.u16(1); li.push(countsBytes(c.counts)); li.push(c.bytes); }
+  if (li.len % 2) li.u8(0);
+  const lib = li.out();
+  w.u32(4 + lib.length + 4); w.u32(lib.length); w.push(lib); w.u32(0);
+  w.u16(1);
+  const comp = [0, 1, 2].map(off => rleChannel(composite, W, H, off));
+  comp.forEach(c => w.push(countsBytes(c.counts))); comp.forEach(c => w.push(c.bytes));
+  return w.out();
+}
+function renderPSDLayers() {
+  return withExportSize(10e6, () => {
+    const meshesByRing = ringGroups.map(g => g.children.filter(o => o.isMesh));
+    const all = meshesByRing.flat(); const orig = new Map(all.map(m => [m, m.material]));
+    const pix = o => o.g.getImageData(0, 0, o.c.width, o.c.height).data;
+    // composite
+    renderer.render(scene, camera);
+    const comp = grabCanvas(); if (state.label) drawLabel(comp.g, comp.c.width, comp.c.height, !isDark());
+    const W = comp.c.width, H = comp.c.height, layers = [];
+    // background
+    const bgc = document.createElement('canvas'); bgc.width = W; bgc.height = H; const bgg = bgc.getContext('2d'); bgg.fillStyle = BG[state.bg]; bgg.fillRect(0, 0, W, H);
+    layers.push({ name: 'Background', data: bgg.getImageData(0, 0, W, H).data });
+    scene.background = null; renderer.setClearColor(0x000000, 0);
+    try {
+      if (state.shadow) {
+        all.forEach(m => { m.material = HOLDOUT; }); ground.visible = true;
+        renderer.render(scene, camera); layers.push({ name: 'Shadow 그림자', data: pix(grabCanvas()) });
+      }
+      ground.visible = false;
+      const outerFirst = [...ringGroups.keys()].reverse();
+      for (const k of outerFirst) {
+        all.forEach(m => { m.material = HOLDOUT; }); meshesByRing[k].forEach(m => { m.material = orig.get(m); });
+        renderer.render(scene, camera); layers.push({ name: `RING ${k + 1} · ${ringLabel(k)}`, data: pix(grabCanvas()) });
+      }
+    } finally { all.forEach(m => { m.material = orig.get(m); }); }
+    if (state.label) {
+      const lc = document.createElement('canvas'); lc.width = W; lc.height = H; const lg = lc.getContext('2d');
+      drawLabel(lg, W, H, !isDark()); layers.push({ name: 'ØWN Logo', data: lg.getImageData(0, 0, W, H).data });
+    }
+    return { W, H, composite: pix(comp), layers };
+  });
+}
+$('#exPng').addEventListener('click', async () => saveFile(`OWN_straw_${stamp()}.png`, await renderPNG(false), 'image'));
+$('#exPngT').addEventListener('click', async () => saveFile(`OWN_straw_transparent_${stamp()}.png`, await renderPNG(true), 'image'));
+async function makePSDZip() {
+  const { W, H, composite, layers } = renderPSDLayers();
+  const psd = buildPSD(W, H, composite, layers), name = `OWN_straw_layers_${stamp()}`;
+  return { zip: zipSync({ [name + '.psd']: psd }, { level: 1 }), name, psd };
+}
+$('#exPsd').addEventListener('click', async () => {
+  toast('레이어를 나눠 PSD를 만드는 중…');
+  await new Promise(r => setTimeout(r, 60));
+  try { const { zip, name } = await makePSDZip(); await saveFile(name + '.zip', zip, 'bin'); }
+  catch (e) { console.error(e); toast('PSD 만들기에 실패했어요'); }
+});
+/* ---------- vector SVG for Illustrator ---------- */
+function convexHull(P) {
+  const pts = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (pts.length < 3) return pts;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], hi = [];
+  for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (hi.length >= 2 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); }
+  hi.pop(); lo.pop(); return lo.concat(hi);
+}
+const mixHex = (hex, to, t) => '#' + new THREE.Color(hex).lerp(new THREE.Color(to), t).getHexString();
+const dPath = pts => 'M' + pts.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('L') + 'Z';
+const xmlEsc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+function buildVectorSVG() {
+  const W = view.clientWidth, H = view.clientHeight, SEG = 28;
+  root.updateMatrixWorld(true); camera.updateMatrixWorld(); camera.updateProjectionMatrix();
+  const cp = camera.position, B = new THREE.Vector3(), tmp = new THREE.Vector3();
+  const proj = v => { const p = tmp.copy(v).project(camera); return { x: (p.x + 1) / 2 * W, y: (1 - p.y) / 2 * H, ok: p.z > -1 && p.z < 1 }; };
+  const layers = new Map();
+  for (const r of strawRecs) {
+    const M = ringGroups[r.ring].matrixWorld, n = r.pts.length;
+    const circle = (i, rad) => {
+      B.crossVectors(r.T[i], r.N[i]); const out = [];
+      for (let j = 0; j < SEG; j++) { const a = j / SEG * Math.PI * 2; out.push(r.pts[i].clone().addScaledVector(r.N[i], Math.cos(a) * rad).addScaledVector(B, Math.sin(a) * rad).applyMatrix4(M)); }
+      return out;
+    };
+    const rings3 = r.pts.map((_, i) => circle(i, r.Ro));
+    let bad = false; const ring2 = rings3.map(c => c.map(v => { const p = proj(v); if (!p.ok) bad = true; return [p.x, p.y]; }));
+    if (bad) continue;
+    const op = r.mat === 'glass' ? 0.55 : r.mat === 'frost' ? 0.8 : 1;
+    const items = layers.get(r.ring) || []; layers.set(r.ring, items);
+    const segs = r.closed ? n : n - 1;
+    for (let i = 0; i < segs; i++) {
+      const j = (i + 1) % n;
+      const mid = r.pts[i].clone().add(r.pts[j]).multiplyScalar(0.5).applyMatrix4(M);
+      items.push({ z: mid.distanceTo(cp), svg: `<path d="${dPath(convexHull([...ring2[i], ...ring2[j]]))}" fill="${r.color}"${op < 1 ? ` fill-opacity="${op}"` : ''}/>` });
+    }
+    if (!r.closed) for (const [i, sg] of [[0, -1], [n - 1, 1]]) {
+      const Pw = r.pts[i].clone().applyMatrix4(M), Tw = r.T[i].clone().multiplyScalar(sg).transformDirection(M);
+      if (Tw.dot(cp.clone().sub(Pw)) <= 0) continue;
+      const inner = circle(i, r.Ri).map(v => { const p = proj(v); return [p.x, p.y]; });
+      items.push({ z: Pw.distanceTo(cp) - r.Ro * 0.5, svg: `<g><path d="${dPath(ring2[i])}${dPath(inner)}" fill="${mixHex(r.color, '#ffffff', 0.22)}" fill-rule="evenodd"${op < 1 ? ` fill-opacity="${op}"` : ''}/><path d="${dPath(inner)}" fill="${mixHex(r.color, '#000000', 0.55)}"/></g>` });
+    }
+  }
+  const order = [...layers.entries()].map(([k, it]) => ({ k, it, z: it.reduce((a, b) => a + b.z, 0) / Math.max(1, it.length) })).sort((a, b) => b.z - a.z);
+  let body = `<g id="Background" data-name="Background"><rect width="${W}" height="${H}" fill="${BG[state.bg]}"/></g>\n`;
+  for (const { k, it } of order) {
+    it.sort((a, b) => b.z - a.z);
+    const nm = `RING ${k + 1} · ${ringLabel(k)}`;
+    body += `<g id="RING_${k + 1}" data-name="${xmlEsc(nm)}">\n${it.map(o => o.svg).join('\n')}\n</g>\n`;
+  }
+  if (state.label) {
+    const s = Math.min(W, H) / 900, lh = 40 * s, ink = isDark() ? '#F2F2EE' : '#20292C';
+    const inner = LOGO_SVG.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').replace(/fill="#231f20"/gi, `fill="${ink}"`);
+    body += `<g id="OWN_Logo" data-name="ØWN Logo"><g transform="translate(${(40 * s).toFixed(2)} ${(H - 64 * s - lh).toFixed(2)}) scale(${(lh / 336.9124).toFixed(5)})">${inner}</g>`;
+    body += `<text x="${(40 * s).toFixed(2)}" y="${(H - 40 * s).toFixed(2)}" font-family="IBM Plex Mono, monospace" font-size="${(14 * s).toFixed(2)}" letter-spacing="${(3 * s).toFixed(2)}" fill="${ink}">MADE TO FIT YOUR SIP.</text></g>\n`;
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n<title>ØWN Straw Fitting Graphic</title>\n${body}</svg>\n`;
+}
+$('#exSvg').addEventListener('click', () => {
+  try { saveFile(`OWN_straw_vector_${stamp()}.svg`, buildVectorSVG(), 'svg'); }
+  catch (e) { console.error(e); toast('SVG 만들기에 실패했어요'); }
+});
+
+/* ---------- settings ---------- */
+function settingsObj() { return { app: 'own-straw-lab', version: 2, savedAt: new Date().toISOString(), camera: { position: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov }, state }; }
+function applySettings(obj) {
+  if (!obj || obj.app !== 'own-straw-lab' || !obj.state) { toast('ØWN 설정 파일이 아니에요'); return; }
+  for (const k of Object.keys(DEFAULTS)) if (k in obj.state && typeof obj.state[k] === typeof DEFAULTS[k]) state[k] = structuredClone(obj.state[k]);
+  for (const k of ['ringManual', 'ringY', 'ringTilt']) while (state[k].length < 10) state[k].push(0);
+  play = null; prep = buildPrep(); refreshInputs(); rebuild();
+  if (obj.camera) { camera.position.fromArray(obj.camera.position); controls.target.fromArray(obj.camera.target); camera.fov = obj.camera.fov; camera.updateProjectionMatrix(); syncElev(); }
+  toast('설정을 불러왔어요');
+}
+$('#saveJson').addEventListener('click', () => saveFile(`OWN_settings_${stamp()}.json`, JSON.stringify(settingsObj(), null, 2), 'text'));
+$('#jsonIn').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (f) { try { applySettings(JSON.parse(await f.text())); } catch (err) { toast('설정 파일을 읽지 못했어요'); } } });
+const PKEY = 'own-straw-presets-v2';
+const readPresets = () => { try { return JSON.parse(localStorage.getItem(PKEY) || '[]'); } catch (e) { return []; } };
+function renderPresets() {
+  const list = readPresets(), sel = $('#presetList');
+  sel.innerHTML = list.length ? list.map((p, i) => `<option value="${i}">${p.name.replace(/</g, '&lt;')}</option>`).join('') : '<option value="">저장된 프리셋 없음</option>';
+}
+$('#presetSave').addEventListener('click', () => {
+  const name = $('#presetName').value.trim() || `프리셋 ${stamp()}`;
+  const list = readPresets(); list.unshift({ name, data: settingsObj() });
+  try { localStorage.setItem(PKEY, JSON.stringify(list.slice(0, 30))); toast('프리셋을 저장했어요'); $('#presetName').value = ''; }
+  catch (e) { toast('이 브라우저에서는 저장할 수 없어요 — 설정 파일로 저장해 주세요'); }
+  renderPresets();
+});
+$('#presetLoad').addEventListener('click', () => { const p = readPresets()[+$('#presetList').value]; if (p) applySettings(p.data); });
+$('#presetDel').addEventListener('click', () => {
+  const list = readPresets(); const i = +$('#presetList').value; if (!list[i]) return;
+  list.splice(i, 1); try { localStorage.setItem(PKEY, JSON.stringify(list)); } catch (e) { } renderPresets();
+});
+
+/* ======================= init & loop ======================= */
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(view); resize();
+renderer.setAnimationLoop(now => {
+  if (tween) {
+    const t = clamp((now - tween.t0) / tween.dur, 0, 1), e = ease(t);
+    camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.q0, tween.q1, e);
+    camera.fov = lerp(tween.f0, tween.f1, e); camera.updateProjectionMatrix();
+    if (t >= 1) tween = null; syncElev();
+  }
+  if (play) stepPlay(now);
+  controls.update();
+  renderer.render(scene, camera);
+});
+
+try {
+  const parsed = parseSVGSource(DEFAULT_SVG, 'own');
+  src = buildSource(parsed.items, 'svg', parsed.mmPerUnit, parsed.center);
+  prep = buildPrep();
+  ORIG_INNER = Math.round(src.rMin / 10 * 1000) / 1000; state.innerR = ORIG_INNER;
+} catch (e) { console.error(e); toast('그래픽을 불러오지 못했어요'); }
+renderPresets();
+refreshInputs();
+rebuild();
+setView('iso', 0);
+window.__own = { buildVectorSVG, addRing, removeRing, state, get prep() { return prep; }, setView, rebuild, applyLayout, camera, controls, renderer, scene, root, refreshInputs, renderPNG, makePSDZip, animateTo, fitPercent, setHover, ringGroups: () => ringGroups };
+</script>
+</body>
+</html>
